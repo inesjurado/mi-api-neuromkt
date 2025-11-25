@@ -1,0 +1,180 @@
+@page "/proyectosInvest"
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEProyecto EProyecto
+@inject IJSRuntime JS
+@inject IEUsuario EUsuario
+@using Npgsql
+@inject NavigationManager Nav
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                PROYECTOS
+            </div>
+        </RadzenCard>
+    </div>
+
+    <RadzenCard Class="nf-table-card" Style="margin-top:2rem;">
+
+        <div class="nf-toolbar">
+            <RadzenButton Icon="add_circle"
+                          Text="Nuevo proyecto"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Disabled="@busy"
+                          Click="@NuevoProyecto" />
+
+            <RadzenButton Icon="file_download"
+                          Text="Descargar proyectos"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@DescargarProyectos" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(mensajeOk))
+        {
+            <RadzenAlert Severity="AlertSeverity.Success"
+                         Style="margin-bottom:0.75rem;">
+                @mensajeOk
+            </RadzenAlert>
+        }
+
+        @if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <RadzenAlert Severity="AlertSeverity.Error"
+                         Style="margin-bottom:0.75rem;">
+                @mensajeError
+            </RadzenAlert>
+        }
+
+        <RadzenDataGrid TItem="ProyectoResumenModel"
+                        Data="@proyectos"
+                        RowHover="true"
+                        AllowPaging="true"
+                        PageSize="10"
+                        ShowPagingSummary="true"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        Style="width:100%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Property="Codigo"
+                                      Title="Código"
+                                      Width="120px"
+                                      Filterable="true" />
+
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Property="Nombre"
+                                      Title="Proyecto"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Property="NumParticipantes"
+                                      Title="Participantes"
+                                      Width="140px"
+                                      Filterable="false" />
+
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Title="Acciones"
+                                      Width="200px"
+                                      Filterable="false">
+                    <Template Context="p">
+                        <RadzenButton Icon="edit"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-right:0.5rem;"
+                                      Click="@(() => VerProyecto(p))" />
+
+                        <RadzenButton Icon="delete"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => BorrarProyecto(p))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+    </RadzenCard>
+
+</RadzenCard>
+
+@code {
+    private List<ProyectoResumenModel> proyectos = new();
+    private bool busy = false;
+    private string? mensajeOk;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProyectosAsync();
+    }
+
+    private async Task CargarProyectosAsync()
+    {
+        try
+        {
+            mensajeError = null;
+            proyectos = await EProyecto.ListarProyectosResumenAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando proyectos: " + ex.Message;
+        }
+    }
+
+    private void NuevoProyecto()
+    {
+        // Ajusta la ruta a la que lleve tu formulario de alta
+        Nav.NavigateTo("/nuevoProyecto");
+    }
+
+    private void VerProyecto(ProyectoResumenModel p)
+    {
+        // Vista detalle/edición del proyecto
+        Nav.NavigateTo($"/investigador/proyectos/{p.Codigo}");
+    }
+
+    private async Task BorrarProyecto(ProyectoResumenModel p)
+    {
+        if (busy) return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm", $"¿Seguro que quieres eliminar el proyecto '{p.Nombre}'?");
+
+        if (!confirmar) return;
+
+        mensajeOk = null;
+        mensajeError = null;
+        busy = true;
+
+        try
+        {
+            await EProyecto.EliminarProyectoAsync(p.Codigo);
+            mensajeOk = "Proyecto eliminado correctamente.";
+            await CargarProyectosAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private Task DescargarProyectos()
+    {
+        // Aquí luego metes la lógica de descarga (CSV/Excel) para el investigador
+        // por ahora dejamos un TODO o un simple console log.
+        Console.WriteLine("TODO: descarga de proyectos investigador");
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,273 @@
+@page "/nuevoProyecto"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+
+@inject IEProyecto EProyecto
+@inject IEColor EColor
+@inject IEPalabra EPalabra
+@inject IEFragancia EFragancia      @* AJUSTA EL NOMBRE DEL SERVICIO *@
+@inject IEParticipante EParticipante @* AJUSTA EL NOMBRE DEL SERVICIO *@
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                Neurofragancia - Nuevo proyecto
+            </div>
+        </RadzenCard>
+    </div>
+
+    <RadzenCard Class="nf-table-card" Style="margin-top:2rem; max-width:900px; margin-left:auto; margin-right:auto;">
+
+        @if (!string.IsNullOrEmpty(mensajeOk))
+        {
+            <RadzenAlert Severity="AlertSeverity.Success"
+                         Style="margin-bottom:0.75rem;">
+                @mensajeOk
+            </RadzenAlert>
+        }
+
+        @if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <RadzenAlert Severity="AlertSeverity.Error"
+                         Style="margin-bottom:0.75rem;">
+                @mensajeError
+            </RadzenAlert>
+        }
+
+        <div class="nf-form-vertical">
+
+            @* Código interno (opcional, si tu función lo genera sola puedes ocultarlo) *@
+            <div class="nf-form-field">
+                <label class="nf-label">Código del proyecto:</label>
+                <RadzenTextBox @bind-Value="proyecto.Codigo"
+                               Placeholder="Deja vacío para que se genere automáticamente"
+                               Style="width:100%;" />
+            </div>
+
+            <div class="nf-form-field">
+                <label class="nf-label">Nombre del proyecto:</label>
+                <RadzenTextBox @bind-Value="proyecto.Nombre"
+                               Style="width:100%;" />
+            </div>
+
+            <div class="nf-form-field">
+                <label class="nf-label">Fabricante / marca:</label>
+                <RadzenTextBox @bind-Value="proyecto.Proveedor"
+                               Style="width:100%;" />
+            </div>
+
+            <div class="nf-form-field">
+                <label class="nf-label">Descripción breve:</label>
+                <RadzenTextArea @bind-Value="proyecto.Descripcion"
+                                Rows="3"
+                                Style="width:100%;" />
+            </div>
+
+            <hr />
+
+            <!-- Palabras -->
+            <div class="nf-form-field">
+                <label class="nf-label">Palabras:</label>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <RadzenDropDown Data="@palabras"
+                                    TextProperty="Palabra"
+                                    ValueProperty="Palabra"
+                                    @bind-Value="seleccionPalabras"
+                                    Multiple="true"
+                                    Style="flex:1;"
+                                    Placeholder="Selecciona las palabras a usar" />
+                    @* Si quisieras crear nuevas palabras desde aquí, pondrías un botón 'Añadir' *@
+                </div>
+            </div>
+
+            <!-- Colores -->
+            <div class="nf-form-field">
+                <label class="nf-label">Colores:</label>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <RadzenDropDown Data="@colores"
+                                    TextProperty="Nombre"
+                                    ValueProperty="Hex"
+                                    @bind-Value="seleccionColores"
+                                    Multiple="true"
+                                    Style="flex:1;"
+                                    Placeholder="Selecciona los colores a usar" />
+                </div>
+            </div>
+
+            <!-- Fragancias -->
+            <div class="nf-form-field">
+                <label class="nf-label">Fragancia(s):</label>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <RadzenDropDown Data="@fragancias"
+                                    TextProperty="Nombre"
+                                    ValueProperty="Codigo"     @* o Id, ajusta al modelo *@
+                                    @bind-Value="seleccionFragancias"
+                                    Multiple="true"
+                                    Style="flex:1;"
+                                    Placeholder="Selecciona las fragancias del proyecto" />
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Participantes -->
+            <div class="nf-form-field">
+                <label class="nf-label">Participantes:</label>
+                <RadzenDropDown Data="@participantes"
+                                TextProperty="NombreCompleto"   @* ajusta al campo que tengas *@
+                                ValueProperty="Id"              @* ajusta al campo que tengas *@
+                                @bind-Value="seleccionParticipantes"
+                                Multiple="true"
+                                Style="width:100%;"
+                                Placeholder="Selecciona los participantes que harán la prueba" />
+            </div>
+
+            <div class="nf-form-field">
+                <label class="nf-label">
+                    Número de participantes del proyecto:
+                    @((seleccionParticipantes?.Count ?? 0)) (automático)
+                </label>
+            </div>
+
+            <div class="nf-form-actions" style="margin-top:1.5rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
+
+                <RadzenButton Text="EMPEZAR"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Disabled="@busy"
+                              Click="@(() => GuardarProyecto(true))" />
+
+                <RadzenButton Text="Guardar"
+                              Icon="save"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Disabled="@busy"
+                              Click="@(() => GuardarProyecto(false))" />
+
+                <RadzenButton Text="Cancelar"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@Cancelar" />
+            </div>
+
+        </div>
+
+    </RadzenCard>
+
+</RadzenCard>
+
+@code {
+    private ProyectoModel proyecto = new ProyectoModel();
+
+    private List<PalabraModel> palabras = new();
+    private List<ColorModel> colores = new();
+    private List<FraganciaModel> fragancias = new();
+    private List<ParticipanteModel> participantes = new();
+
+    private IList<string> seleccionPalabras = new List<string>();
+    private IList<string> seleccionColores = new List<string>();
+    private IList<string> seleccionFragancias = new List<string>();
+    private IList<string> seleccionParticipantes = new List<string>(); // o IList<int> si es Id numérico
+
+    private bool busy = false;
+    private string? mensajeOk;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCombosAsync();
+    }
+
+    private async Task CargarCombosAsync()
+    {
+        try
+        {
+            palabras      = await EPalabra.ListarPalabrasAsync();
+            colores       = await EColor.ListarColoresAsync();
+            fragancias    = await EFragancia.ListarFraganciasAsync();        // AJUSTA AL SERVICIO REAL
+            participantes = await EParticipante.ListarParticipantesAsync();  // AJUSTA AL SERVICIO REAL
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando datos del formulario: " + ex.Message;
+        }
+    }
+
+    private async Task GuardarProyecto(bool empezarPrueba)
+    {
+        if (busy) return;
+
+        mensajeOk = null;
+        mensajeError = null;
+
+        // Validaciones sencillas
+        if (string.IsNullOrWhiteSpace(proyecto.Nombre))
+        {
+            mensajeError = "El nombre del proyecto es obligatorio.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(proyecto.Proveedor))
+        {
+            mensajeError = "El fabricante/marca es obligatorio.";
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            // TODO: sustituir por el usuario logueado
+            proyecto.CreadoPor = "investigador_demo@upv.es";
+
+            await EProyecto.CrearProyectoAsync(proyecto);
+
+            // TODO IMPORTANTE:
+            // Aquí deberías guardar las relaciones:
+            // - proyecto_palabras (proyecto.Codigo, cada item de seleccionPalabras)
+            // - proyecto_colores
+            // - proyectos_fragancias
+            // - proyectos_participantes
+            //
+            // Idealmente con servicios tipo:
+            // await EProyectoPalabra.GuardarAsync(proyecto.Codigo, seleccionPalabras);
+            // await EProyectoColor.GuardarAsync(proyecto.Codigo, seleccionColores);
+            // await EProyectoFragancia.GuardarAsync(proyecto.Codigo, seleccionFragancias);
+            // await EProyectoParticipante.GuardarAsync(proyecto.Codigo, seleccionParticipantes);
+
+            mensajeOk = "Proyecto guardado correctamente.";
+
+            if (empezarPrueba)
+            {
+                // Navegar directamente a la vista de prueba del proyecto
+                // Ajusta la ruta al flujo real de tu aplicación.
+                Nav.NavigateTo($"/investigador/pruebas/{proyecto.Codigo}");
+            }
+            else
+            {
+                // Volver al listado de proyectos del investigador
+                Nav.NavigateTo("/investigador/proyectos");
+            }
+        }
+        catch (PostgresException ex)
+        {
+            mensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error inesperado al guardar el proyecto: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Cancelar()
+    {
+        Nav.NavigateTo("/investigador/proyectos");
+    }
+}

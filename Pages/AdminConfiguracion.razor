@@ -1,0 +1,620 @@
+@page "/configuracion"
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@using Npgsql
+
+@inject IJSRuntime JS
+@inject IEColor EColor
+@inject IEPalabra EPalabra
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                CONFIGURACION
+            </div>
+        </RadzenCard>
+    </div>
+
+    <div class="config-columns">
+
+        @* ========= COLORES ========= *@
+        <RadzenCard Class="nf-table-card">
+            <div class="nf-toolbar">
+                <RadzenButton Icon="add_circle"
+                              Text="Nuevo Color"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Disabled="@busyColor"
+                              Click="@MostrarColorPicker" />
+
+                <RadzenButton Icon="file_download"
+                              Text="Descargar Colores"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="@DescargarColores" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensajeColorOk))
+            {
+                <RadzenAlert Severity="AlertSeverity.Success"
+                             Style="margin-bottom:0.75rem;">
+                    @mensajeColorOk
+                </RadzenAlert>
+            }
+
+            @if (!string.IsNullOrEmpty(mensajeColorError))
+            {
+                <RadzenAlert Severity="AlertSeverity.Error"
+                             Style="margin-bottom:0.75rem;">
+                    @mensajeColorError
+                </RadzenAlert>
+            }
+
+            @* LISTA  / NUEVO / EDITAR *@
+            @if (!colorPickerVisible && !editarColorVisible)
+            {
+                <RadzenDataGrid TItem="ColorModel"
+                                Data="@colores"
+                                RowHover="true"
+                                AllowPaging="false"
+                                ShowPagingSummary="false"
+                                Style="width:100%;">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="ColorModel"
+                                              Title="Color">
+                            <Template Context="c">
+                                <div class="nf-color-main">
+                                    <span class="nf-color-swatch" style="background-color:@c.Hex"></span>
+                                    <div class="nf-color-text">
+                                        <div class="nf-color-hex">@c.Hex</div>
+                                    </div>
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="ColorModel"
+                                              Title="Acciones"
+                                              Width="150px">
+                            <Template Context="c">
+                                <RadzenButton Icon="edit"
+                                              Size="ButtonSize.Small"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Style="margin-right:0.5rem;"
+                                              Click="@(() => EmpezarEditarColor(c))" />
+                                <RadzenButton Icon="delete"
+                                              Size="ButtonSize.Small"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Click="@(() => BorrarColor(c))" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+            else if (colorPickerVisible)
+            {
+                @* ALTA DE NUEVO COLOR *@
+                <div class="nf-color-picker-wrapper">
+                    <RadzenColorPicker @bind-Value="nuevoColorHex"
+                                       Style="width:100%; max-width:420px;" />
+
+                    <div class="nf-form-actions" style="margin-top:1rem;">
+                        <RadzenButton Text="Añadir"
+                                      Icon="check"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Disabled="@busyColor"
+                                      Click="@AñadirColor" />
+
+                        <RadzenButton Text="Cancelar"
+                                      Icon="close"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-left:0.5rem;"
+                                      Click="@CancelarColorPicker" />
+                    </div>
+                </div>
+            }
+            else if (editarColorVisible)
+            {
+                @* EDICIÓN DE COLOR EXISTENTE *@
+                <div class="nf-color-picker-wrapper">
+                    <RadzenColorPicker @bind-Value="colorEditando.Hex"
+                                       Style="width:100%; max-width:420px;" />
+
+                    <div class="nf-form-actions" style="margin-top:1rem;">
+                        <RadzenButton Text="Guardar"
+                                      Icon="check"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Disabled="@busyColor"
+                                      Click="@GuardarColorEditado" />
+
+                        <RadzenButton Text="Cancelar"
+                                      Icon="close"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-left:0.5rem;"
+                                      Click="@CancelarEditarColor" />
+                    </div>
+                </div>
+            }
+        </RadzenCard>
+
+        @* ========= PALABRAS ========= *@
+        <RadzenCard Class="nf-table-card" Style="margin-top:2rem;">
+
+            <div class="nf-toolbar">
+                <RadzenButton Icon="add_circle"
+                              Text="Nueva Palabra"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Disabled="@busyPalabra"
+                              Click="@MostrarInputPalabra" />
+
+                <RadzenButton Icon="file_download"
+                              Text="Descargar Palabras"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="@DescargarPalabras" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensajePalabraOk))
+            {
+                <RadzenAlert Severity="AlertSeverity.Success"
+                             Style="margin-bottom:0.75rem;">
+                    @mensajePalabraOk
+                </RadzenAlert>
+            }
+
+            @if (!string.IsNullOrEmpty(mensajePalabraError))
+            {
+                <RadzenAlert Severity="AlertSeverity.Error"
+                             Style="margin-bottom:0.75rem;">
+                    @mensajePalabraError
+                </RadzenAlert>
+            }
+
+            @* ALTA PALABRA *@
+            @if (inputPalabraVisible)
+            {
+                <div class="nf-form-inline" style="margin-bottom:0.75rem;">
+                    <RadzenTextBox @bind-Value="nuevaPalabra"
+                                   Placeholder="Escribe la nueva palabra"
+                                   Style="width:100%; max-width:260px; margin-right:0.5rem;" />
+                    <RadzenButton Text="Añadir"
+                                  Icon="check"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Disabled="@busyPalabra"
+                                  Click="@AñadirPalabra" />
+                    <RadzenButton Text="Cancelar"
+                                  Icon="close"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Style="margin-left:0.5rem;"
+                                  Click="@CancelarInputPalabra" />
+                </div>
+            }
+
+            @* EDICIÓN PALABRA *@
+            @if (editarPalabraVisible)
+            {
+                <div class="nf-form-inline" style="margin-bottom:0.75rem;">
+                    <RadzenTextBox @bind-Value="palabraEditando"
+                                   Placeholder="Editar palabra"
+                                   Style="width:100%; max-width:260px; margin-right:0.5rem;" />
+                    <RadzenButton Text="Guardar"
+                                  Icon="check"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Disabled="@busyPalabra"
+                                  Click="@GuardarPalabraEditada" />
+                    <RadzenButton Text="Cancelar"
+                                  Icon="close"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Style="margin-left:0.5rem;"
+                                  Click="@CancelarEditarPalabra" />
+                </div>
+            }
+
+            <RadzenDataGrid TItem="PalabraModel"
+                            Data="@palabras"
+                            RowHover="true"
+                            AllowPaging="false"
+                            ShowPagingSummary="false"
+                            AllowFiltering="true"
+                            FilterMode="FilterMode.Advanced"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            Style="width:100%;">
+                <Columns>
+                    <RadzenDataGridColumn TItem="PalabraModel"
+                              Property="Palabra"
+                              Title="Palabra"
+                              Filterable="true"
+                              FilterOperator="FilterOperator.Contains" />
+
+                    <RadzenDataGridColumn TItem="PalabraModel"
+                                          Title="Acciones"
+                                          Width="150px"
+                                          Filterable="false">
+                        <Template Context="p">
+                            <RadzenButton Icon="edit"
+                                          Size="ButtonSize.Small"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Style="margin-right:0.5rem;"
+                                          Click="@(() => EmpezarEditarPalabra(p))" />
+                            <RadzenButton Icon="delete"
+                                          Size="ButtonSize.Small"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Click="@(() => BorrarPalabra(p))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+
+        </RadzenCard>
+
+    </div>
+</RadzenCard>
+
+@code {
+    // === MODELOS EN MEMORIA ===
+    private List<ColorModel> colores = new();
+    private List<PalabraModel> palabras = new();
+
+    // ----- Colores -----
+    private bool busyColor = false;
+    private bool colorPickerVisible = false;  // alta
+    private bool editarColorVisible = false;  // edición
+
+    private string nuevoColorHex = "#FF0000";
+
+    // para edición
+    private ColorModel colorEditando = new ColorModel();
+    private string? hexOriginalColor;
+
+    private string? mensajeColorOk;
+    private string? mensajeColorError;
+
+    // ----- Palabras -----
+    private bool busyPalabra = false;
+    private bool inputPalabraVisible = false;   // alta
+    private bool editarPalabraVisible = false;  // edición
+
+    private string nuevaPalabra = string.Empty;
+
+    // para edición
+    private string? palabraOriginal;
+    private string palabraEditando = string.Empty;
+
+    private string? mensajePalabraOk;
+    private string? mensajePalabraError;
+
+    // ===== CARGA INICIAL =====
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarColoresAsync();
+        await CargarPalabrasAsync();
+    }
+
+    // ===== COLORES =====
+    private async Task CargarColoresAsync()
+    {
+        try
+        {
+            colores = await EColor.ListarColoresAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeColorError = "Error cargando colores: " + ex.Message;
+        }
+    }
+
+    private void MostrarColorPicker()
+    {
+        colorPickerVisible = true;
+        editarColorVisible = false;
+        mensajeColorOk = null;
+        mensajeColorError = null;
+    }
+
+    private void CancelarColorPicker()
+    {
+        colorPickerVisible = false;
+        nuevoColorHex = "#FF0000";
+    }
+
+    private async Task AñadirColor()
+    {
+        if (busyColor) return;
+
+        mensajeColorOk = null;
+        mensajeColorError = null;
+
+        if (string.IsNullOrWhiteSpace(nuevoColorHex))
+        {
+            mensajeColorError = "Selecciona un color válido.";
+            return;
+        }
+
+        busyColor = true;
+
+        try
+        {
+            var nombre = $"Color_{colores.Count + 1}";
+
+            var modelo = new ColorModel
+            {
+                Hex = nuevoColorHex.Trim(),
+                Nombre = nombre
+            };
+
+            await EColor.CrearColorAsync(modelo);
+
+            mensajeColorOk = $"Color {nombre} añadido correctamente.";
+            await CargarColoresAsync();
+            CancelarColorPicker();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeColorError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeColorError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyColor = false;
+        }
+    }
+
+    // === EDICIÓN COLOR ===
+    private void EmpezarEditarColor(ColorModel c)
+    {
+        hexOriginalColor = c.Hex;
+        colorEditando = new ColorModel
+        {
+            Hex = c.Hex,
+            Nombre = c.Nombre
+        };
+
+        colorPickerVisible = false;
+        editarColorVisible = true;
+        mensajeColorOk = null;
+        mensajeColorError = null;
+    }
+
+    private void CancelarEditarColor()
+    {
+        editarColorVisible = false;
+        colorEditando = new ColorModel();
+        hexOriginalColor = null;
+    }
+
+    private async Task GuardarColorEditado()
+    {
+        if (busyColor || string.IsNullOrWhiteSpace(hexOriginalColor))
+            return;
+
+        mensajeColorOk = null;
+        mensajeColorError = null;
+        busyColor = true;
+
+        try
+        {
+            await EColor.ActualizarColorAsync(hexOriginalColor, colorEditando);
+            mensajeColorOk = "Color actualizado correctamente.";
+            await CargarColoresAsync();
+            CancelarEditarColor();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeColorError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeColorError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyColor = false;
+        }
+    }
+
+    private async Task BorrarColor(ColorModel color)
+    {
+        if (busyColor) return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm", $"¿Seguro que quieres eliminar el color {color.Hex}?");
+
+        if (!confirmar) return;
+
+        mensajeColorOk = null;
+        mensajeColorError = null;
+        busyColor = true;
+
+        try
+        {
+            await EColor.EliminarColorAsync(color.Hex);
+            mensajeColorOk = $"Color eliminado correctamente.";
+            await CargarColoresAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeColorError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeColorError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyColor = false;
+        }
+    }
+
+    private Task DescargarColores()
+    {
+        // TODO: generar CSV/JSON si quieres
+        return Task.CompletedTask;
+    }
+
+    // ===== PALABRAS =====
+    private async Task CargarPalabrasAsync()
+    {
+        try
+        {
+            palabras = await EPalabra.ListarPalabrasAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajePalabraError = "Error cargando palabras: " + ex.Message;
+        }
+    }
+
+    private void MostrarInputPalabra()
+    {
+        inputPalabraVisible = true;
+        editarPalabraVisible = false;
+        nuevaPalabra = string.Empty;
+        mensajePalabraOk = null;
+        mensajePalabraError = null;
+    }
+
+    private void CancelarInputPalabra()
+    {
+        inputPalabraVisible = false;
+        nuevaPalabra = string.Empty;
+    }
+
+    private async Task AñadirPalabra()
+    {
+        if (busyPalabra) return;
+
+        mensajePalabraOk = null;
+        mensajePalabraError = null;
+
+        if (string.IsNullOrWhiteSpace(nuevaPalabra))
+        {
+            mensajePalabraError = "La palabra no puede estar vacía.";
+            return;
+        }
+
+        busyPalabra = true;
+
+        try
+        {
+            var modelo = new PalabraModel
+            {
+                Palabra = nuevaPalabra.Trim()
+            };
+
+            await EPalabra.CrearPalabraAsync(modelo);
+
+            mensajePalabraOk = $"Palabra '{modelo.Palabra}' añadida correctamente.";
+            await CargarPalabrasAsync();
+            CancelarInputPalabra();
+        }
+        catch (PostgresException ex)
+        {
+            mensajePalabraError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajePalabraError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyPalabra = false;
+        }
+    }
+
+    // === EDICIÓN PALABRA ===
+    private void EmpezarEditarPalabra(PalabraModel p)
+    {
+        palabraOriginal = p.Palabra;
+        palabraEditando = p.Palabra;
+
+        editarPalabraVisible = true;
+        inputPalabraVisible = false;
+
+        mensajePalabraOk = null;
+        mensajePalabraError = null;
+    }
+
+    private void CancelarEditarPalabra()
+    {
+        editarPalabraVisible = false;
+        palabraOriginal = null;
+        palabraEditando = string.Empty;
+    }
+
+    private async Task GuardarPalabraEditada()
+    {
+        if (busyPalabra || string.IsNullOrWhiteSpace(palabraOriginal))
+            return;
+
+        if (string.IsNullOrWhiteSpace(palabraEditando))
+        {
+            mensajePalabraError = "La palabra no puede estar vacía.";
+            return;
+        }
+
+        mensajePalabraOk = null;
+        mensajePalabraError = null;
+        busyPalabra = true;
+
+        try
+        {
+            await EPalabra.ActualizarPalabraAsync(palabraOriginal, palabraEditando.Trim());
+            mensajePalabraOk = "Palabra actualizada correctamente.";
+            await CargarPalabrasAsync();
+            CancelarEditarPalabra();
+        }
+        catch (PostgresException ex)
+        {
+            mensajePalabraError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajePalabraError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyPalabra = false;
+        }
+    }
+
+    private async Task BorrarPalabra(PalabraModel palabra)
+    {
+        if (busyPalabra) return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm", $"¿Seguro que quieres eliminar la palabra '{palabra.Palabra}'?");
+
+        if (!confirmar) return;
+
+        mensajePalabraOk = null;
+        mensajePalabraError = null;
+        busyPalabra = true;
+
+        try
+        {
+            await EPalabra.EliminarPalabraAsync(palabra.Palabra);
+            mensajePalabraOk = $"Palabra '{palabra.Palabra}' eliminada correctamente.";
+            await CargarPalabrasAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajePalabraError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajePalabraError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busyPalabra = false;
+        }
+    }
+
+    private Task DescargarPalabras()
+    {
+        // TODO: generar CSV/JSON si quieres
+        return Task.CompletedTask;
+    }
+}

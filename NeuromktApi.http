@@ -1,0 +1,6 @@
+@NeuromktApi_HostAddress = http://localhost:5142
+
+GET {{NeuromktApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

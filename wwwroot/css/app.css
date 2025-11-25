@@ -1,0 +1,410 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+app {
+    display: block;
+    height: 100vh;
+}
+
+/* Opcional: color de fondo general */
+body {
+    background-color: #f5f5f5;
+}
+
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    position: relative;
+    padding: 2rem;
+}
+
+.login-card {
+    width: 380px;
+    max-width: 100%;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+}
+
+.login-header p {
+    margin: 0;
+    color: #666;
+}
+
+.login-footer {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.login-footer a {
+    color: #3f51b5;
+    text-decoration: none;
+}
+
+.login-logo-upv {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-weight: bold;
+}
+
+.login-logo-macom {
+    position: absolute;
+    bottom: 1rem;
+    left: 1.5rem;
+    font-weight: bold;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 0.75rem;
+}
+
+
+
+
+/* Página tipo mockup Neurofragancia */
+
+.nf-page {
+    background: #dde2ee;
+    /* gris azulado de fondo */
+    padding: 2rem 3rem;
+}
+
+.nf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.nf-title-card {
+    flex: 1;
+    margin-right: 2rem;
+    background: #dde2ee;
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+.nf-title-text {
+    text-align: center;
+    padding: 1rem 0;
+    font-weight: 600;
+}
+
+.nf-user-card {
+    width: 260px;
+    background: #f4eef8;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+}
+
+.nf-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #d0c3f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin: 0 0.75rem 0 1rem;
+}
+
+.nf-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nf-user-name {
+    font-weight: 600;
+}
+
+.nf-user-role {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.nf-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.nf-table-card {
+    background: #f8f1f8;
+    border-radius: 12px;
+    box-shadow: none;
+    padding: 1rem 1.5rem;
+}
+
+
+
+/* Modal casero centrado encima de todo */
+
+.nf-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    /* por encima de todo */
+}
+
+.nf-modal-card {
+    width: 480px;
+    max-width: 95%;
+    border-radius: 16px;
+}
+
+.nf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.nf-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.nf-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nf-form-actions {
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+
+
+/* COLORES Y PALABRAS */
+
+
+/* Cabecera de lista (texto + "Acciones" a la derecha) */
+.nf-list {
+    margin-top: 1rem;
+    padding: 1.5rem 2rem;
+    background-color: #fefaff;
+    border-radius: 16px;
+}
+
+.nf-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e1d7ff;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+}
+
+.nf-list-header-actions {
+    margin-right: 0.5rem;
+}
+
+/* Fila: texto a la izquierda, icono a la derecha en la misma línea */
+.nf-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    font-size: 0.95rem;
+}
+
+.nf-list-actions .rz-button {
+    margin-left: 0.5rem;
+}
+
+/* Color picker centrado y más compacto */
+.nf-color-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0 0.5rem 0;
+}
+
+/* Ocultar el input rojo de arriba para que parezca solo panel de color */
+.nf-color-picker-wrapper .rz-colorpicker-input {
+    display: none;
+}
+
+.nf-color-picker-wrapper .rz-colorpicker {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Contenido de la parte izquierda de la fila de colores */
+.nf-color-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Circulito de color */
+.nf-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Textos del color */
+.nf-color-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.nf-color-name {
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.nf-color-hex {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+
+/*   MESAJE DE ERROR   */
+.nf-input-error {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #d32f2f;
+    /* rojo más marcado */
+}
+
+/*   FILTROS   */
+.nf-fecha-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nf-fecha-rango {
+    display: flex;
+    margin-top: 0.25rem;
+}
+
+.filtro-fecha-box {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+    margin-top: 6px;
+    width: 170px;
+}
+
+
+
+/* =============================== */
+/*      COLORES DE LOS TITULOS     */
+/* =============================== */
+
+.nf-title-text,
+.nf-modal-header span,
+.login-header h1 {
+    color: #1F2D3D !important;
+    /* azul oscuro apagado */
+}
+
+/* Si quieres que TODOS los h1/h2 sigan ese tono: */
+h1,
+h2,
+h3 {
+    color: #1F2D3D;
+}
+
+
+
+/* PRIMARY */
+button.rz-button.rz-button-primary {
+    background-color: #D22A2A !important;
+    border-color: #D22A2A !important;
+    color: #fff !important;
+}
+
+/* SECONDARY */
+button.rz-button.rz-button-secondary {
+    background-color: white !important;
+    border-color: #D22A2A !important;
+    color: #D22A2A !important;
+}
+
+/* LIGHT */
+button.rz-button.rz-button-light {
+    background-color: #f2f2f7 !important;
+    color: #444 !important;
+    border-color: #ddd !important;
+}
+
+
+
+
+/* =============================== */
+/*      BOTONES DESHABILITADOS     */
+/* =============================== */
+
+.rz-button:disabled,
+.rz-button[disabled] {
+    background-color: #b1b1b1 !important;
+    border-color: #b1b1b1 !important;
+    color: #eeeeee !important;
+    opacity: 0.7 !important;
+}
+
+
+
+/* =============================== */
+/*   BOTÓN CERRAR (X) DE MODALES   */
+/* =============================== */
+
+.nf-modal-close {
+    color: #1F2D3D !important;
+    opacity: 0.7;
+}
+
+.nf-modal-close:hover {
+    opacity: 1;
+}

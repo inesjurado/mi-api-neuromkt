@@ -1,0 +1,55 @@
+@page "/adminInicio"
+@using NeuromktApi.Models
+@using NeuromktApi.Services 
+@inject IEProyecto EProyecto
+
+<!-- Título centrado -->
+<RadzenCard Style="margin-bottom: 1.5rem;">
+    <div style="text-align:center; font-size:1.2rem; font-weight:600;">
+        INICIO
+    </div>
+</RadzenCard>
+
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+<RadzenCard>
+    <div style="display:flex; justify-content:center;">
+        <RadzenDataGrid Data="@proyectos"
+                        TItem="ProyectoResumenModel"
+                        ShowPaging="false"
+                        ShowFiltering="false"
+                        ShowSorting="false"
+                        Style="width:60%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Property="Codigo"
+                                      Title="Proyecto" />
+
+                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                                      Property="NumParticipantes"
+                                      Title="Nº Participantes"
+                                      TextAlign="TextAlign.Center" />
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</RadzenCard>
+
+@code {
+    private List<ProyectoResumenModel> proyectos = new();
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            proyectos = await EProyecto.ListarProyectosResumenAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando los proyectos de inicio: " + ex.Message;
+        }
+    }
+}

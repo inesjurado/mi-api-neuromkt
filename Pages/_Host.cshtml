@@ -1,0 +1,30 @@
+@page "/"
+@namespace NeuromktApi.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Neurofragancias</title>
+    <base href="~/" />
+
+    <!-- CSS de tu app -->
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css" />
+
+    <!-- CSS de Radzen -->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/default-base.css" />
+</head>
+<body>
+    <app>
+        @(await Html.RenderComponentAsync<App>(RenderMode.ServerPrerendered))
+    </app>
+
+    <!-- JS de Blazor -->
+    <script src="_framework/blazor.server.js"></script>
+
+    <!-- JS de Radzen -->
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+</body>
+</html>

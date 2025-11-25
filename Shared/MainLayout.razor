@@ -1,0 +1,81 @@
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject UserSession UserSession
+
+<RadzenLayout Style="min-height:100vh;">
+    <RadzenSidebar 
+        @bind-Expanded="@sidebarExpanded"
+        Media="(max-width: 992px)"
+        Style="width:260px;">
+        <div class="sidebar-content">
+            <RadzenPanelMenu>
+
+                @* Opciones comunes a todos *@
+                <RadzenPanelMenuItem Text="Inicio" Path="/adminInicio" Icon="home" />
+
+                @* Solo ADMIN *@
+                @if (IsAdmin)
+                {
+                    <RadzenPanelMenuItem Text="Proyectos" Path="/proyectos" Icon="list" />
+                    <RadzenPanelMenuItem Text="Perfiles" Path="/usuario-test" Icon="group" />
+                    <RadzenPanelMenuItem Text="Configuracion" Path="/configuracion" Icon="settings" />
+                }
+
+                @* Solo INVESTIGADOR *@
+                @if (IsInvestigador)
+                {
+                    <RadzenPanelMenuItem Text="Proyectos" Path="/proyectosInvest" Icon="assignment" />
+                    <RadzenPanelMenuItem Text="Fragancias" Path="/investigador/pruebas" Icon="science" />
+                    <RadzenPanelMenuItem Text="Participantes" Path="/investigador/pruebas" Icon="people" />
+                }
+
+            </RadzenPanelMenu>
+            <div class="sidebar-footer">
+                    <RadzenButton Text="Cerrar sesión"
+                                Icon="logout"
+                                ButtonStyle="ButtonStyle.Danger"
+                                Style="width:100%;"
+                                Click="@Logout" />
+            </div>
+        </div>
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <RadzenTopBar>
+            <ChildContent>
+                <RadzenSidebarToggle Click="@ToggleSidebar" />
+                <span class="rz-toolbar-title ml-2">
+                    NEUROFRAGANCIAS (@UserSession.Role)
+                </span>
+            </ChildContent>
+        </RadzenTopBar>
+
+        <div class="p-4">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    bool sidebarExpanded = true;
+
+    bool IsAdmin => UserSession.Role == "Administrador";
+    bool IsInvestigador => UserSession.Role == "Investigador";
+
+
+    void ToggleSidebar()
+    {
+        sidebarExpanded = !sidebarExpanded;
+    }
+    void Logout()
+    {
+        // Si usas UserSession para el rol, lo limpiamos
+        if (UserSession is not null)
+        {
+            UserSession.Role = null;
+        }
+
+        // Volver al login
+        NavigationManager.NavigateTo("/login", true);
+    }
+}

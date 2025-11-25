@@ -1,0 +1,91 @@
+@page "/"
+@page "/login"
+@layout BlankLayout
+@using NeuromktApi.Services
+@inject NavigationManager NavigationManager
+@inject UserSession UserSession
+@inject IEUsuario EUsuario
+
+<div class="login-page">
+    <div class="login-logo-upv">
+        UPV
+    </div>
+
+    <div class="login-logo-macom">
+        MACOM
+    </div>
+
+    <RadzenCard Class="login-card">
+        <div class="login-header">
+            <h1>Neurofragancias</h1>
+            <p>Plataforma de neuromarketing</p>
+        </div>
+
+        <div class="login-form">
+            <RadzenTextBox @bind-Value="Email"
+                           Placeholder="Email"
+                           Style="width:100%; margin-bottom: 1rem;" />
+
+            <RadzenPassword @bind-Value="Password"
+                            Placeholder="Contraseña"
+                            Style="width:100%; margin-bottom: 1.5rem;" />
+
+            <RadzenButton Text="Iniciar sesión"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="width:100%;"
+                          Click="@OnLogin" />
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div style="margin-top:0.75rem; color:#c62828; font-size:0.9rem;">
+                    @ErrorMessage
+                </div>
+            }
+        </div>
+    </RadzenCard>
+</div>
+
+@code {
+    string? Email;
+    string? Password;
+    string? ErrorMessage;
+
+    async Task OnLogin()
+    {
+        ErrorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessage = "Introduce el email y la contraseña.";
+            return;
+        }
+
+        // Llamamos a la función de Supabase a través del servicio
+        var (ok, rol) = await EUsuario.LoginAsync(Email!, Password!);
+
+        if (!ok || string.IsNullOrEmpty(rol))
+        {
+            ErrorMessage = "Usuario o contraseña incorrectos, o usuario inactivo.";
+            return;
+        }
+
+        // Guardamos en la sesión
+        UserSession.Role = rol;
+        UserSession.Email = Email; // si tienes esta propiedad en UserSession
+
+        // Redirigimos según el rol devuelto por la función
+        if (rol == "Administrador")
+        {
+            NavigationManager.NavigateTo("/adminInicio");
+        }
+        else if (rol == "Investigador")
+        {
+            NavigationManager.NavigateTo("/investigador");
+        }
+        else
+        {
+            // Por si en el futuro hay otros roles
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

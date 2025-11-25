@@ -1,0 +1,391 @@
+@page "/proyectos"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEProyecto EProyecto
+@inject IJSRuntime JS
+@inject IEUsuario EUsuario
+@using Npgsql
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                PROYECTOS
+            </div>
+        </RadzenCard>
+    </div>
+
+    <div class="nf-toolbar" style="display:flex; gap:1rem;">
+        <RadzenButton Icon="add_circle"
+                      Text="Nuevo proyecto"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Click="@AbrirNuevoProyecto" />
+
+        <RadzenButton Icon="file_download"
+                      Text="Descargar Proyectos"
+                      ButtonStyle="ButtonStyle.Secondary"
+                      Disabled="true" />
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(mensajeOk))
+    {
+        <RadzenAlert Severity="AlertSeverity.Success"
+                     Style="margin-bottom:1rem;">
+            @mensajeOk
+        </RadzenAlert>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <RadzenAlert Severity="AlertSeverity.Error"
+                     Style="margin-bottom:1rem;">
+            @mensajeError
+        </RadzenAlert>
+    }
+
+    <!-- Tabla -->
+    <RadzenCard Class="nf-table-card">
+        <RadzenDataGrid TItem="ProyectoModel"
+                        Data="@proyectos"
+                        RowHover="true"
+                        AllowPaging="false"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        Style="width:100%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="Nombre"
+                                    Title="Proyecto"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="Proveedor"
+                                    Title="Proveedor"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="Descripcion"
+                                    Title="Descripción"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="CreadoPor"
+                                    Title="Creado por"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                @* FECHA: Radzen muestra el popup con 2 condiciones, así puedes poner el rango *@
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="FechaCreacion"
+                                    Title="Fecha creación"
+                                    Type="typeof(DateTime)"
+                                    FormatString="{0:dd/MM/yyyy}"
+                                    Filterable="true" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Title="Acciones"
+                                    Width="120px"
+                                    Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="file_download"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Disabled="true" />
+
+                        <RadzenButton Icon="delete"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Click="@(() => OnBorrarProyecto(item))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+
+</RadzenCard>
+
+@if (nuevoDialogVisible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>Nuevo Proyecto</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="CerrarNuevoProyecto">
+                    ✕
+                </button>
+            </div>
+
+            <RadzenTemplateForm TItem="ProyectoModel"
+                                Data="@nuevoProyecto"
+                                Submit="@OnSubmitNuevoProyecto">
+
+                <div class="nf-dialog-form">
+
+                    @* Error general (por ejemplo, de Postgres) *@
+                    @if (!string.IsNullOrEmpty(mensajeFormError))
+                    {
+                        <div class="alert alert-danger" style="margin-bottom:0.75rem;">
+                            @mensajeFormError
+                        </div>
+                    }
+
+                    <div class="nf-form-field">
+                        <label>Nombre</label>
+                        <RadzenTextBox @bind-Value="nuevoProyecto.Nombre"
+                                       Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(errorNombreProyecto))
+                        {
+                            <div class="nf-input-error">@errorNombreProyecto</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Proveedor</label>
+                        <RadzenTextBox @bind-Value="nuevoProyecto.Proveedor"
+                                       Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(errorProveedorProyecto))
+                        {
+                            <div class="nf-input-error">@errorProveedorProyecto</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Descripción</label>
+                        <RadzenTextArea @bind-Value="nuevoProyecto.Descripcion"
+                                        Style="width:100%; min-height:90px;" />
+                        @if (!string.IsNullOrEmpty(errorDescripcionProyecto))
+                        {
+                            <div class="nf-input-error">@errorDescripcionProyecto</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Creado por (email)</label>
+                        <RadzenDropDown @bind-Value="nuevoProyecto.CreadoPor"
+                                        Data="@usuarios"
+                                        TextProperty="Email"
+                                        ValueProperty="Email"
+                                        Style="width:100%;"
+                                        Placeholder="Selecciona un usuario"
+                                        AllowClear="true" />
+                        @if (!string.IsNullOrEmpty(errorCreadoPorProyecto))
+                        {
+                            <div class="nf-input-error">@errorCreadoPorProyecto</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-actions">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="check"
+                                      Disabled="@creandoBusy"
+                                      Text="@(creandoBusy ? "Creando..." : "Crear proyecto")" />
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Text="Cancelar"
+                                      Icon="close"
+                                      Click="@CerrarNuevoProyecto"
+                                      Style="margin-left:0.5rem;" />
+                    </div>
+                </div>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </div>
+}
+
+
+@code {
+    private List<ProyectoModel> proyectos = new();
+    private List<UsuarioModel> usuarios = new();
+
+    private string? mensajeOk;
+    private string? mensajeError;
+    private bool busy = false;
+
+    private bool nuevoDialogVisible = false;
+    private ProyectoModel nuevoProyecto = new ProyectoModel();
+    private bool creandoBusy = false;
+    private string? mensajeFormError;
+
+    // Errores por campo del formulario de proyecto
+    private string? errorNombreProyecto;
+    private string? errorProveedorProyecto;
+    private string? errorDescripcionProyecto;
+    private string? errorCreadoPorProyecto;
+
+    // Lista filtrada
+    private List<ProyectoModel> proyectosFiltrados = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProyectosAsync();
+        await CargarUsuariosAsync();
+    }
+
+    private async Task CargarProyectosAsync()
+    {
+        mensajeError = null;
+
+        try
+        {
+            proyectos = await EProyecto.ListarProyectosAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando proyectos: " + ex.Message;
+        }
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            usuarios = await EUsuario.ListarUsuariosAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando usuarios: " + ex.Message;
+        }
+    }
+
+    private async Task OnBorrarProyecto(ProyectoModel proyecto)
+    {
+        if (busy)
+            return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar el proyecto \"{proyecto.Nombre}\"?"
+        );
+
+        if (!confirmar)
+            return;
+
+        mensajeOk = null;
+        mensajeError = null;
+        busy = true;
+
+        try
+        {
+            await EProyecto.EliminarProyectoAsync(proyecto.Codigo);
+            mensajeOk = $"Proyecto \"{proyecto.Nombre}\" eliminado correctamente.";
+
+            await CargarProyectosAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void LimpiarErroresProyecto()
+    {
+        errorNombreProyecto = null;
+        errorProveedorProyecto = null;
+        errorDescripcionProyecto = null;
+        errorCreadoPorProyecto = null;
+        mensajeFormError = null;
+    }
+
+    private void AbrirNuevoProyecto()
+    {
+        nuevoProyecto = new ProyectoModel();
+        creandoBusy = false;
+        LimpiarErroresProyecto();
+        nuevoDialogVisible = true;
+    }
+
+    private void CerrarNuevoProyecto()
+    {
+        nuevoDialogVisible = false;
+    }
+
+    private async Task OnSubmitNuevoProyecto()
+    {
+        LimpiarErroresProyecto();
+
+        // ==== VALIDACIÓN FRONT ====
+        var valido = true;
+
+        if (string.IsNullOrWhiteSpace(nuevoProyecto.Nombre))
+        {
+            errorNombreProyecto = "El nombre es obligatorio.";
+            valido = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(nuevoProyecto.Proveedor))
+        {
+            errorProveedorProyecto = "El proveedor es obligatorio.";
+            valido = false;
+        }
+
+        // Descripción la dejamos opcional, pero si quieres exigir algo:
+        /*
+        if (string.IsNullOrWhiteSpace(nuevoProyecto.Descripcion))
+        {
+            errorDescripcionProyecto = "La descripción es obligatoria.";
+            valido = false;
+        }
+        */
+
+        if (string.IsNullOrWhiteSpace(nuevoProyecto.CreadoPor))
+        {
+            errorCreadoPorProyecto = "Debes seleccionar un usuario.";
+            valido = false;
+        }
+
+        if (!valido)
+        {
+            // No llamamos a la API si hay errores
+            return;
+        }
+
+        // ==== LLAMADA A LA API ====
+        creandoBusy = true;
+
+        try
+        {
+            await EProyecto.CrearProyectoAsync(nuevoProyecto);
+            nuevoDialogVisible = false;
+            mensajeOk = $"Proyecto \"{nuevoProyecto.Nombre}\" creado correctamente.";
+
+            await CargarProyectosAsync();
+        }
+        catch (Exception ex)
+        {
+            // Texto de Postgres o de la API
+            mensajeFormError = ex.Message;
+        }
+        finally
+        {
+            creandoBusy = false;
+        }
+    }
+
+
+
+
+
+
+
+}
