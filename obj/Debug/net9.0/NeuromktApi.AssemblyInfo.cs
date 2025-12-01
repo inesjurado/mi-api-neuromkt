@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NeuromktApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a26098e8dcfec4e1cf8a481ad963d9d5e05fb1a6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18cf6af961ef74de20542658c121724b4381a166")]
 [assembly: System.Reflection.AssemblyProductAttribute("NeuromktApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NeuromktApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

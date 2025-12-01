@@ -1,0 +1,201 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEFragancia EFragancia
+
+@using Microsoft.AspNetCore.Components
+@using Npgsql
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>@(EsEdicion ? "Editar fragancia" : "Nueva fragancia")</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <RadzenTemplateForm TItem="FraganciaModel"
+                                Data="@modelo"
+                                Submit="@OnSubmit">
+
+                <div class="nf-dialog-form">
+                    @if (!string.IsNullOrEmpty(MensajeError))
+                    {
+                        <div class="alert alert-danger" style="margin-bottom:0.75rem;">
+                            @MensajeError
+                        </div>
+                    }
+
+                    <div class="nf-form-field">
+                        <label>Nombre</label>
+                        <RadzenTextBox @bind-Value="modelo.Nombre"
+                                       Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(ErrorNombre))
+                        {
+                            <div class="nf-input-error">@ErrorNombre</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Fabricante / marca</label>
+                        <RadzenTextBox @bind-Value="modelo.Proveedor"
+                                       Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(ErrorProveedor))
+                        {
+                            <div class="nf-input-error">@ErrorProveedor</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Descripción breve (opcional)</label>
+                        <RadzenTextArea @bind-Value="modelo.Descripcion"
+                                        Style="width:100%; min-height:80px;" />
+                    </div>
+
+                    <div class="nf-form-actions">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="check"
+                                      Disabled="@Busy"
+                                      Text="@(Busy ? "Guardando..." : "Guardar")" />
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Text="Cancelar"
+                                      Icon="close"
+                                      Click="@Cerrar"
+                                      Style="margin-left:0.5rem;" />
+                    </div>
+                </div>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    // ===== Parámetros que controla el padre =====
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    // true = editar, false = nueva
+    [Parameter] public bool EsEdicion { get; set; } = false;
+
+    // Datos para edición (null en modo alta)
+    [Parameter] public FraganciaModel? Fragancia { get; set; }
+
+    /// <summary>
+    /// Se lanza al crear/editar correctamente. Envía el código de la fragancia.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnGuardado { get; set; }
+
+    // ===== Estado interno =====
+    private FraganciaModel modelo = new();
+    private string? CodigoOriginal;
+    private bool Busy = false;
+    private string? MensajeError;
+    private string? ErrorNombre;
+    private string? ErrorProveedor;
+
+    protected override void OnParametersSet()
+    {
+        if (!Visible)
+            return;
+
+        if (EsEdicion && Fragancia != null)
+        {
+            modelo = new FraganciaModel
+            {
+                Codigo      = Fragancia.Codigo,
+                Nombre      = Fragancia.Nombre,
+                Proveedor   = Fragancia.Proveedor,
+                Descripcion = Fragancia.Descripcion
+            };
+            CodigoOriginal = Fragancia.Codigo;
+        }
+        else if (!EsEdicion)
+        {
+            modelo = new FraganciaModel();
+            CodigoOriginal = null;
+        }
+
+        MensajeError = null;
+        ErrorNombre = null;
+        ErrorProveedor = null;
+    }
+
+    private async Task OnSubmit()
+    {
+        ErrorNombre = null;
+        ErrorProveedor = null;
+        MensajeError = null;
+
+        var valido = true;
+
+        if (string.IsNullOrWhiteSpace(modelo.Nombre))
+        {
+            ErrorNombre = "El nombre es obligatorio.";
+            valido = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(modelo.Proveedor))
+        {
+            ErrorProveedor = "El fabricante / marca es obligatorio.";
+            valido = false;
+        }
+
+        if (!valido)
+            return;
+
+        Busy = true;
+
+        try
+        {
+            string codigo;
+
+            if (!EsEdicion)
+            {
+                // ALTA
+                codigo = await EFragancia.CrearFraganciaAsync(modelo);
+            }
+            else
+            {
+                // EDICIÓN
+                var clave = CodigoOriginal ?? modelo.Codigo;
+                await EFragancia.ActualizarFraganciaAsync(clave, modelo);
+                codigo = clave;
+            }
+
+            if (OnGuardado.HasDelegate)
+                await OnGuardado.InvokeAsync(codigo);
+
+            await Cerrar();
+        }
+        catch (PostgresException ex)
+        {
+            MensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            MensajeError = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        MensajeError = null;
+        ErrorNombre = null;
+        ErrorProveedor = null;
+        modelo = new FraganciaModel();
+        CodigoOriginal = null;
+
+        if (VisibleChanged.HasDelegate)
+            await VisibleChanged.InvokeAsync(false);
+    }
+}

@@ -25,6 +25,12 @@ builder.Services.AddScoped<IEProyecto, EProyecto>();
 builder.Services.AddScoped<UserSession>();
 builder.Services.AddScoped<IEColor, EColor>();
 builder.Services.AddScoped<IEPalabra, EPalabra>();
+builder.Services.AddScoped<IEParticipante, EParticipante>();
+builder.Services.AddScoped<IEFragancia, EFragancia>();
+builder.Services.AddScoped<IEProyectoFragancia, EProyectoFragancia>();
+builder.Services.AddScoped<IEPrueba, EPrueba>();
+builder.Services.AddScoped<IEProyectoColor, EProyectoColor>();
+builder.Services.AddScoped<IEProyectoPalabra, EProyectoPalabra>();
 
 
 var app = builder.Build();

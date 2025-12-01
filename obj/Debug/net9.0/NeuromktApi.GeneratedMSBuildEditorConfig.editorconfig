@@ -44,8 +44,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Qcm95ZWN0b3MucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/Investigador.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0aWdhZG9yLnJhem9y
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminUsuario.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Vc3VhcmlvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestFragancias.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0RnJhZ2FuY2lhcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestParticipantes.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0UGFydGljaXBhbnRlcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestProyectos.razor]
@@ -56,12 +64,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevoProyectoInvestigador.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9Qcm95ZWN0b0ludmVzdGlnYWRvci5yYXpvcg==
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevaFragancia.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldmFGcmFnYW5jaWEucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/Usuario.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVXN1YXJpby5yYXpvcg==
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevoParticipante.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9QYXJ0aWNpcGFudGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevoProyectoInvestigador.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9Qcm95ZWN0b0ludmVzdGlnYWRvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/Shared/BlankLayout.razor]

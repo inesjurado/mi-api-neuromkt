@@ -1,0 +1,211 @@
+@page "/investFragancias"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEFragancia EFragancia
+@inject IJSRuntime JS
+@using Npgsql
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                FRAGANCIAS
+            </div>
+        </RadzenCard>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="nf-toolbar" style="display:flex; gap:1rem;">
+        <RadzenButton Icon="add_circle"
+                  Text="Nueva fragancia"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click="@AbrirNuevaFragancia" />
+
+        <RadzenButton Icon="file_download"
+                      Text="Descargar Fragancias"
+                      ButtonStyle="ButtonStyle.Secondary"
+                      Disabled="true" />
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(mensajeOk))
+    {
+        <RadzenAlert Severity="AlertSeverity.Success"
+                     Style="margin-bottom:1rem;">
+            @mensajeOk
+        </RadzenAlert>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <RadzenAlert Severity="AlertSeverity.Error"
+                     Style="margin-bottom:1rem;">
+            @mensajeError
+        </RadzenAlert>
+    }
+
+    <!-- Tabla -->
+    <RadzenCard Class="nf-table-card">
+        <RadzenDataGrid TItem="FraganciaModel"
+                        Data="@fragancias"
+                        RowHover="true"
+                        AllowPaging="false"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        Style="width:100%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="FraganciaModel"
+                                      Property="Nombre"
+                                      Title="Fragancia"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="FraganciaModel"
+                                      Property="Proveedor"
+                                      Title="Proveedor"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="FraganciaModel"
+                                      Property="Descripcion"
+                                      Title="Descripción"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="FraganciaModel"
+                                      Title="Acciones"
+                                      Width="120px"
+                                      Filterable="false">
+                    <Template Context="f">
+                        <RadzenButton Icon="edit"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => AbrirEditarFragancia(f))" />
+
+                        <RadzenButton Icon="delete"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => OnBorrarFragancia(f))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+
+</RadzenCard>
+
+<NuevaFragancia Visible="@dialogoFraganciaVisible"
+                VisibleChanged="@OnDialogoFraganciaVisibleChanged"
+                EsEdicion="@esEdicion"
+                Fragancia="@fraganciaSeleccionada"
+                OnGuardado="@OnFraganciaGuardada" />
+
+@code {
+    private List<FraganciaModel> fragancias = new();
+
+    private string? mensajeOk;
+    private string? mensajeError;
+    private bool busy = false;
+
+    // === Popup compartido ===
+    private bool dialogoFraganciaVisible = false;
+    private bool esEdicion = false;
+    private FraganciaModel? fraganciaSeleccionada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarFraganciasAsync();
+    }
+
+    private async Task CargarFraganciasAsync()
+    {
+        mensajeError = null;
+
+        try
+        {
+            fragancias = await EFragancia.ListarFraganciasAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando fragancias: " + ex.Message;
+        }
+    }
+
+    // ====== BORRAR ======
+    private async Task OnBorrarFragancia(FraganciaModel f)
+    {
+        if (busy)
+            return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar la fragancia \"{f.Nombre}\"?"
+        );
+
+        if (!confirmar)
+            return;
+
+        mensajeOk = null;
+        mensajeError = null;
+        busy = true;
+
+        try
+        {
+            await EFragancia.EliminarFraganciaAsync(f.Codigo);
+            mensajeOk = $"Fragancia \"{f.Nombre}\" eliminada correctamente.";
+            await CargarFraganciasAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    // ====== ABRIR / CERRAR POPUP ======
+
+    // Alta
+    private void AbrirNuevaFragancia()
+    {
+        esEdicion = false;
+        fraganciaSeleccionada = null;
+        dialogoFraganciaVisible = true;
+    }
+
+    // Edición
+    private void AbrirEditarFragancia(FraganciaModel f)
+    {
+        esEdicion = true;
+        fraganciaSeleccionada = f;
+        dialogoFraganciaVisible = true;
+    }
+
+    // Sincronizar Visible del componente con la variable local
+    private void OnDialogoFraganciaVisibleChanged(bool visible)
+    {
+        dialogoFraganciaVisible = visible;
+    }
+
+    // Después de crear/editar desde el componente
+    private async Task OnFraganciaGuardada(string codigo)
+    {
+        mensajeOk = esEdicion
+            ? $"Fragancia actualizada correctamente."
+            : $"Fragancia creada correctamente (código {codigo}).";
+
+        await CargarFraganciasAsync();
+    }
+}
+

@@ -1,0 +1,206 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEParticipante EParticipante
+
+@using Microsoft.AspNetCore.Components
+@using Npgsql
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>@(EsEdicion ? "Editar participante" : "Nuevo participante")</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <RadzenTemplateForm TItem="ParticipanteModel"
+                                Data="@modelo"
+                                Submit="@OnSubmit">
+
+                <div class="nf-dialog-form">
+
+                    @if (!string.IsNullOrEmpty(MensajeError))
+                    {
+                        <div class="alert alert-danger" style="margin-bottom:0.75rem;">
+                            @MensajeError
+                        </div>
+                    }
+
+                    <div class="nf-form-field">
+                        <label>Email</label>
+                        <RadzenTextBox @bind-Value="modelo.Email"
+                                       Style="width:100%;"
+                                       Disabled="@EsEdicion" />
+                        @if (!string.IsNullOrEmpty(ErrorEmail))
+                        {
+                            <div class="nf-input-error">@ErrorEmail</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Género</label>
+                        <RadzenDropDown @bind-Value="modelo.Genero"
+                                        Data="@Generos"
+                                        Style="width:100%;"
+                                        Placeholder="Selecciona género (opcional)"
+                                        AllowClear="true" />
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Fecha nacimiento</label>
+                        <RadzenDatePicker @bind-Value="modelo.FechaNacimiento"
+                                          DateFormat="dd/MM/yyyy"
+                                          Style="width:100%;" />
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Notas (opcional)</label>
+                        <RadzenTextArea @bind-Value="modelo.Notas"
+                                        Style="width:100%; min-height:80px;" />
+                    </div>
+
+                    <div class="nf-form-actions">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="check"
+                                      Disabled="@Busy"
+                                      Text="@(Busy ? "Guardando..." : "Guardar")" />
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Text="Cancelar"
+                                      Icon="close"
+                                      Click="@Cerrar"
+                                      Style="margin-left:0.5rem;" />
+                    </div>
+
+                </div>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    // ===== Parámetros que controla el padre =====
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    // true = editar, false = nuevo
+    [Parameter] public bool EsEdicion { get; set; } = false;
+
+    // Datos para edición (puede ser null en modo nuevo)
+    [Parameter] public ParticipanteModel? Participante { get; set; }
+
+    /// <summary>
+    /// Se dispara al crear/editar correctamente. Envía el email.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnGuardado { get; set; }
+
+    // ===== Estado interno =====
+    private ParticipanteModel modelo = new();
+    private string? EmailOriginal;
+    private bool Busy = false;
+    private string? MensajeError;
+    private string? ErrorEmail;
+
+    private List<string> Generos = new() { "M", "F", "Otro" };
+
+    protected override void OnParametersSet()
+    {
+        if (!Visible)
+            return;
+
+        // Si es edición, copiamos datos del participante recibido
+        if (EsEdicion && Participante != null)
+        {
+            modelo = new ParticipanteModel
+            {
+                Email           = Participante.Email,
+                Genero          = Participante.Genero,
+                FechaNacimiento = Participante.FechaNacimiento,
+                Notas           = Participante.Notas
+            };
+            EmailOriginal = Participante.Email;
+        }
+        else if (!EsEdicion)
+        {
+            // Alta nueva: modelo vacío
+            modelo = new ParticipanteModel();
+            EmailOriginal = null;
+        }
+
+        MensajeError = null;
+        ErrorEmail = null;
+    }
+
+    private async Task OnSubmit()
+    {
+        ErrorEmail = null;
+        MensajeError = null;
+
+        var valido = true;
+
+        if (string.IsNullOrWhiteSpace(modelo.Email))
+        {
+            ErrorEmail = "El email es obligatorio.";
+            valido = false;
+        }
+        else if (!modelo.Email.Contains("@"))
+        {
+            ErrorEmail = "El email no tiene un formato válido.";
+            valido = false;
+        }
+
+        if (!valido)
+            return;
+
+        Busy = true;
+
+        try
+        {
+            if (!EsEdicion)
+            {
+                // ALTA
+                await EParticipante.CrearParticipanteAsync(modelo);
+            }
+            else
+            {
+                // EDICIÓN
+                var clave = EmailOriginal ?? modelo.Email;
+                await EParticipante.ActualizarParticipanteAsync(clave, modelo);
+            }
+
+            if (OnGuardado.HasDelegate)
+                await OnGuardado.InvokeAsync(modelo.Email);
+
+            await Cerrar();
+        }
+        catch (PostgresException ex)
+        {
+            MensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            MensajeError = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        MensajeError = null;
+        ErrorEmail = null;
+        modelo = new ParticipanteModel();
+        EmailOriginal = null;
+
+        if (VisibleChanged.HasDelegate)
+            await VisibleChanged.InvokeAsync(false);
+    }
+}

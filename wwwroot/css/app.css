@@ -408,3 +408,29 @@ button.rz-button.rz-button-light {
 .nf-modal-close:hover {
     opacity: 1;
 }
+
+
+
+.nf-form-field {
+    margin-bottom: 1.25rem !important;
+}
+
+.nf-modal-backdrop {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 9999 !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nf-modal-card {
+    width: 520px;
+    max-width: 95%;
+    z-index: 10000 !important;
+}

@@ -1,0 +1,228 @@
+@page "/investParticipante"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEParticipante EParticipante
+@inject IJSRuntime JS
+@using Npgsql
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                PARTICIPANTES
+            </div>
+        </RadzenCard>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="nf-toolbar" style="display:flex; gap:1rem;">
+        <RadzenButton Icon="add_circle"
+                  Text="Nuevo participante"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click="@AbrirNuevoParticipante" />
+
+        <RadzenButton Icon="file_download"
+                      Text="Descargar Participantes"
+                      ButtonStyle="ButtonStyle.Secondary"
+                      Disabled="true" />
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(mensajeOk))
+    {
+        <RadzenAlert Severity="AlertSeverity.Success"
+                     Style="margin-bottom:1rem;">
+            @mensajeOk
+        </RadzenAlert>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <RadzenAlert Severity="AlertSeverity.Error"
+                     Style="margin-bottom:1rem;">
+            @mensajeError
+        </RadzenAlert>
+    }
+
+    <!-- Tabla -->
+    <RadzenCard Class="nf-table-card">
+        <RadzenDataGrid TItem="ParticipanteModel"
+                        Data="@participantes"
+                        RowHover="true"
+                        AllowPaging="false"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        Style="width:100%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="ParticipanteModel"
+                                      Property="Email"
+                                      Title="Email"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ParticipanteModel"
+                                      Property="Genero"
+                                      Title="Género"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ParticipanteModel"
+                                      Property="FechaNacimiento"
+                                      Title="Fecha nacimiento"
+                                      Type="typeof(DateTime)"
+                                      FormatString="{0:dd/MM/yyyy}"
+                                      Filterable="true" />
+
+                <RadzenDataGridColumn TItem="ParticipanteModel"
+                                      Property="Notas"
+                                      Title="Notas"
+                                      Filterable="true"
+                                      FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ParticipanteModel"
+                                      Title="Acciones"
+                                      Width="120px"
+                                      Filterable="false">
+                    <Template Context="p">
+                        <RadzenButton Icon="edit"
+                            Size="ButtonSize.Small"
+                            ButtonStyle="ButtonStyle.Light"
+                            Style="margin-right:0.5rem;"
+                            Click="@(() => AbrirEditarParticipante(p))" />
+
+                        <RadzenButton Icon="delete"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => OnBorrarParticipante(p))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+
+</RadzenCard>
+
+<NuevoParticipante Visible="@dialogoParticipanteVisible"
+                   VisibleChanged="@OnDialogoParticipanteVisibleChanged"
+                   EsEdicion="@esEdicion"
+                   Participante="@participanteSeleccionado"
+                   OnGuardado="@OnParticipanteGuardado" />
+
+
+
+@code {
+    private List<ParticipanteModel> participantes = new();
+
+    private string? mensajeOk;
+    private string? mensajeError;
+    private bool busy = false;
+
+    // Lista fija de géneros (puedes cambiarla)
+    private List<string> generos = new() { "M", "F", "Otro" };
+
+    // --- Nuevo ---
+    private ParticipanteModel nuevoParticipante = new ParticipanteModel();
+    private bool creandoBusy = false;
+    private string? mensajeFormError;
+    private string? errorEmailNuevo;
+
+    // --- Editar ---
+    private ParticipanteModel participanteEditando = new ParticipanteModel();
+    private string? emailOriginal;
+    private bool editandoBusy = false;
+    private string? mensajeFormErrorEditar;
+
+    private bool dialogoParticipanteVisible = false;
+    private bool esEdicion = false;
+    private ParticipanteModel? participanteSeleccionado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarParticipantesAsync();
+    }
+
+    private async Task CargarParticipantesAsync()
+    {
+        mensajeError = null;
+
+        try
+        {
+            participantes = await EParticipante.ListarParticipantesAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando participantes: " + ex.Message;
+        }
+    }
+
+    // ====== BORRAR ======
+    private async Task OnBorrarParticipante(ParticipanteModel p)
+    {
+        if (busy)
+            return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar el participante \"{p.Email}\"?"
+        );
+
+        if (!confirmar)
+            return;
+
+        mensajeOk = null;
+        mensajeError = null;
+        busy = true;
+
+        try
+        {
+            await EParticipante.EliminarParticipanteAsync(p.Email);
+            mensajeOk = $"Participante \"{p.Email}\" eliminado correctamente.";
+            await CargarParticipantesAsync();
+        }
+        catch (PostgresException ex)
+        {
+            mensajeError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void AbrirNuevoParticipante()
+    {
+        esEdicion = false;
+        participanteSeleccionado = null;
+        dialogoParticipanteVisible = true;
+    }
+
+    private void AbrirEditarParticipante(ParticipanteModel p)
+    {
+        esEdicion = true;
+        participanteSeleccionado = p;
+        dialogoParticipanteVisible = true;
+    }
+
+    private void OnDialogoParticipanteVisibleChanged(bool visible)
+    {
+        dialogoParticipanteVisible = visible;
+    }
+
+    private async Task OnParticipanteGuardado(string email)
+    {
+        mensajeOk = esEdicion
+            ? $"Participante \"{email}\" actualizado correctamente."
+            : $"Participante \"{email}\" creado correctamente.";
+
+        await CargarParticipantesAsync();
+    }
+
+}

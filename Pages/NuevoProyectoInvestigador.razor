@@ -2,12 +2,19 @@
 
 @using NeuromktApi.Models
 @using NeuromktApi.Services
+@using Npgsql
+@using System.Linq
 
+@inject UserSession UserSession
+@inject IEProyectoFragancia EProyectoFragancia
+@inject IEPrueba EPrueba
 @inject IEProyecto EProyecto
 @inject IEColor EColor
 @inject IEPalabra EPalabra
-@inject IEFragancia EFragancia      @* AJUSTA EL NOMBRE DEL SERVICIO *@
-@inject IEParticipante EParticipante @* AJUSTA EL NOMBRE DEL SERVICIO *@
+@inject IEFragancia EFragancia    
+@inject IEParticipante EParticipante 
+@inject IEProyectoPalabra ProyectoPalabraService
+@inject IEProyectoColor ProyectoColorService
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -17,7 +24,7 @@
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
-                Neurofragancia - Nuevo proyecto
+                NUEVO PROYECTO
             </div>
         </RadzenCard>
     </div>
@@ -41,14 +48,6 @@
         }
 
         <div class="nf-form-vertical">
-
-            @* Código interno (opcional, si tu función lo genera sola puedes ocultarlo) *@
-            <div class="nf-form-field">
-                <label class="nf-label">Código del proyecto:</label>
-                <RadzenTextBox @bind-Value="proyecto.Codigo"
-                               Placeholder="Deja vacío para que se genere automáticamente"
-                               Style="width:100%;" />
-            </div>
 
             <div class="nf-form-field">
                 <label class="nf-label">Nombre del proyecto:</label>
@@ -82,7 +81,6 @@
                                     Multiple="true"
                                     Style="flex:1;"
                                     Placeholder="Selecciona las palabras a usar" />
-                    @* Si quisieras crear nuevas palabras desde aquí, pondrías un botón 'Añadir' *@
                 </div>
             </div>
 
@@ -91,12 +89,22 @@
                 <label class="nf-label">Colores:</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <RadzenDropDown Data="@colores"
-                                    TextProperty="Nombre"
-                                    ValueProperty="Hex"
                                     @bind-Value="seleccionColores"
                                     Multiple="true"
                                     Style="flex:1;"
-                                    Placeholder="Selecciona los colores a usar" />
+                                    Placeholder="Selecciona los colores a usar"
+                                    TextProperty="Hex"
+                                    ValueProperty="Hex">
+
+                        <!-- Cada opción en la lista -->
+                        <Template Context="c">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:18px; height:18px; border-radius:4px; background-color:@c.Hex;"></div>
+                                @c.Hex
+                            </div>
+                        </Template>
+
+                    </RadzenDropDown>
                 </div>
             </div>
 
@@ -106,11 +114,16 @@
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <RadzenDropDown Data="@fragancias"
                                     TextProperty="Nombre"
-                                    ValueProperty="Codigo"     @* o Id, ajusta al modelo *@
+                                    ValueProperty="Codigo"    
                                     @bind-Value="seleccionFragancias"
                                     Multiple="true"
                                     Style="flex:1;"
                                     Placeholder="Selecciona las fragancias del proyecto" />
+
+                    <RadzenButton Icon="add_circle"
+                                  Text="Añadir"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="@AbrirNuevaFraganciaDesdeProyecto" />
                 </div>
             </div>
 
@@ -119,13 +132,20 @@
             <!-- Participantes -->
             <div class="nf-form-field">
                 <label class="nf-label">Participantes:</label>
-                <RadzenDropDown Data="@participantes"
-                                TextProperty="NombreCompleto"   @* ajusta al campo que tengas *@
-                                ValueProperty="Id"              @* ajusta al campo que tengas *@
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <RadzenDropDown Data="@participantes"
+                                TextProperty="Email"     
+                                ValueProperty="Email"    
                                 @bind-Value="seleccionParticipantes"
                                 Multiple="true"
                                 Style="width:100%;"
                                 Placeholder="Selecciona los participantes que harán la prueba" />
+
+                    <RadzenButton Icon="add_circle"
+                                  Text="Añadir"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Click="@AbrirNuevoParticipanteDesdeProyecto" />
+                </div>
             </div>
 
             <div class="nf-form-field">
@@ -159,6 +179,19 @@
 
 </RadzenCard>
 
+<!-- POPUP NUEVA FRAGANCIA (reutilizable) -->
+<NuevaFragancia Visible="@dialogoFraganciaVisible"
+                VisibleChanged="@(v => dialogoFraganciaVisible = v)"
+                EsEdicion="false"
+                OnGuardado="@OnFraganciaCreada" />
+
+<!-- POPUP NUEVO PARTICIPANTE (reutilizable) -->
+<NuevoParticipante Visible="@dialogoParticipanteVisible"
+                   VisibleChanged="@(v => dialogoParticipanteVisible = v)"
+                   EsEdicion="false"
+                   OnGuardado="@OnParticipanteCreado" />
+
+
 @code {
     private ProyectoModel proyecto = new ProyectoModel();
 
@@ -170,11 +203,16 @@
     private IList<string> seleccionPalabras = new List<string>();
     private IList<string> seleccionColores = new List<string>();
     private IList<string> seleccionFragancias = new List<string>();
-    private IList<string> seleccionParticipantes = new List<string>(); // o IList<int> si es Id numérico
+    private IList<string> seleccionParticipantes = new List<string>(); 
+    
 
     private bool busy = false;
     private string? mensajeOk;
     private string? mensajeError;
+
+    // popups
+    private bool dialogoFraganciaVisible = false;
+    private bool dialogoParticipanteVisible = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -187,14 +225,61 @@
         {
             palabras      = await EPalabra.ListarPalabrasAsync();
             colores       = await EColor.ListarColoresAsync();
-            fragancias    = await EFragancia.ListarFraganciasAsync();        // AJUSTA AL SERVICIO REAL
-            participantes = await EParticipante.ListarParticipantesAsync();  // AJUSTA AL SERVICIO REAL
+            fragancias    = await EFragancia.ListarFraganciasAsync();
+            participantes = await EParticipante.ListarParticipantesAsync();
         }
         catch (Exception ex)
         {
             mensajeError = "Error cargando datos del formulario: " + ex.Message;
         }
     }
+
+    // === Abrir popups desde esta vista ===
+    private void AbrirNuevaFraganciaDesdeProyecto()
+    {
+        dialogoFraganciaVisible = true;
+    }
+
+    private void AbrirNuevoParticipanteDesdeProyecto()
+    {
+        dialogoParticipanteVisible = true;
+    }
+
+    // === Callbacks desde los popups ===
+    private async Task OnFraganciaCreada(string codigo)
+    {
+        // Recargar combos para incluir la nueva fragancia
+        await CargarCombosAsync();
+
+        // Seleccionar automáticamente la fragancia creada
+        var nueva = fragancias.FirstOrDefault(f => f.Codigo == codigo);
+        if (nueva != null)
+        {
+            if (seleccionFragancias == null)
+                seleccionFragancias = new List<string>();
+
+            if (!seleccionFragancias.Contains(codigo))
+                seleccionFragancias.Add(codigo);
+        }
+
+        mensajeOk = $"Fragancia \"{nueva?.Nombre ?? codigo}\" creada correctamente.";
+    }
+
+    private async Task OnParticipanteCreado(string email)
+    {
+        // Recargar combos para incluir el nuevo participante
+        await CargarCombosAsync();
+
+        // Seleccionar automáticamente el email recién creado
+        if (seleccionParticipantes == null)
+            seleccionParticipantes = new List<string>();
+
+        if (!seleccionParticipantes.Contains(email))
+            seleccionParticipantes.Add(email);
+
+        mensajeOk = $"Participante \"{email}\" creado correctamente.";
+    }
+
 
     private async Task GuardarProyecto(bool empezarPrueba)
     {
@@ -203,7 +288,7 @@
         mensajeOk = null;
         mensajeError = null;
 
-        // Validaciones sencillas
+        // Validación
         if (string.IsNullOrWhiteSpace(proyecto.Nombre))
         {
             mensajeError = "El nombre del proyecto es obligatorio.";
@@ -220,36 +305,63 @@
 
         try
         {
-            // TODO: sustituir por el usuario logueado
-            proyecto.CreadoPor = "investigador_demo@upv.es";
-
+            // 1) Usuario actual
+            var emailActual = UserSession.Email;
+            if (string.IsNullOrWhiteSpace(emailActual))
+            {
+                mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
+                busy = false;
+                return;
+            }
+            proyecto.CreadoPor = emailActual;
+            // 2) Crear proyecto
             await EProyecto.CrearProyectoAsync(proyecto);
+            string codigoProyecto = proyecto.Codigo;   // generado por la BD
+            // Guardar PALABRAS
+            if (seleccionPalabras?.Count > 0)
+            {
+                foreach (var palabra in seleccionPalabras)
+                {
+                    await ProyectoPalabraService.CrearProyectoPalabraAsync(codigoProyecto, palabra);
+                }
+            }
 
-            // TODO IMPORTANTE:
-            // Aquí deberías guardar las relaciones:
-            // - proyecto_palabras (proyecto.Codigo, cada item de seleccionPalabras)
-            // - proyecto_colores
-            // - proyectos_fragancias
-            // - proyectos_participantes
-            //
-            // Idealmente con servicios tipo:
-            // await EProyectoPalabra.GuardarAsync(proyecto.Codigo, seleccionPalabras);
-            // await EProyectoColor.GuardarAsync(proyecto.Codigo, seleccionColores);
-            // await EProyectoFragancia.GuardarAsync(proyecto.Codigo, seleccionFragancias);
-            // await EProyectoParticipante.GuardarAsync(proyecto.Codigo, seleccionParticipantes);
-
+            // COLORES
+            if (seleccionColores?.Count > 0)
+            {
+                foreach (var hex in seleccionColores)
+                {
+                    await ProyectoColorService.CrearProyectoColorAsync(codigoProyecto, hex);
+                }
+            }
+            // Guardar FRAGANCIAS
+            if (seleccionFragancias?.Count > 0)
+            {
+                foreach (var codFragancia in seleccionFragancias)
+                {
+                    await EProyectoFragancia.CrearProyectoFraganciaAsync(codigoProyecto, codFragancia);
+                }
+            }
+            // PARTICIPANTES → CREA PRUEBAS (PRB<n>)
+            if (seleccionParticipantes?.Count > 0)
+            {
+                foreach (var emailParticipante in seleccionParticipantes)
+                {
+                    await EPrueba.CrearPruebaAsync(codigoProyecto, emailParticipante);
+                }
+            }
+            // ----------------------------------------------------
+            // Fin: todo guardado
+            // ----------------------------------------------------
             mensajeOk = "Proyecto guardado correctamente.";
 
             if (empezarPrueba)
             {
-                // Navegar directamente a la vista de prueba del proyecto
-                // Ajusta la ruta al flujo real de tu aplicación.
-                Nav.NavigateTo($"/investigador/pruebas/{proyecto.Codigo}");
+                Nav.NavigateTo($"/investigador/pruebas/{codigoProyecto}");
             }
             else
             {
-                // Volver al listado de proyectos del investigador
-                Nav.NavigateTo("/investigador/proyectos");
+                Nav.NavigateTo("/investProyecto");
             }
         }
         catch (PostgresException ex)
@@ -266,8 +378,9 @@
         }
     }
 
+
     private void Cancelar()
     {
-        Nav.NavigateTo("/investigador/proyectos");
+        Nav.NavigateTo("/investProyecto");
     }
 }

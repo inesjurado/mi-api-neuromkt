@@ -12,7 +12,7 @@ namespace NeuromktApi.Services
     {
         Task<List<ProyectoModel>> ListarProyectosAsync();
         Task EliminarProyectoAsync(string codigo);
-        Task CrearProyectoAsync(ProyectoModel proyecto);
+        Task<string> CrearProyectoAsync(ProyectoModel proyecto);
         Task<List<ProyectoResumenModel>> ListarProyectosResumenAsync();
     }
 
@@ -25,45 +25,59 @@ namespace NeuromktApi.Services
             _db = db;
         }
 
-        public async Task CrearProyectoAsync(ProyectoModel proyecto)
+        public async Task<string> CrearProyectoAsync(ProyectoModel proyecto)
         {
-            var sql = @"
+            const string sql = @"
                 SELECT neuromkt.i_proyecto(
                     @p_codigo,
                     @p_nombre,
                     @p_proveedor,
                     @p_descripcion,
                     @p_creado_por
-                );";
+                );
+            ";
 
-            var pCodigo = new NpgsqlParameter("@p_codigo",
-                string.IsNullOrWhiteSpace(proyecto.Codigo)
-                    ? (object)DBNull.Value
-                    : proyecto.Codigo);
-
-            var pNombre     = new NpgsqlParameter("@p_nombre",     proyecto.Nombre);
-            var pProveedor  = new NpgsqlParameter("@p_proveedor",  proyecto.Proveedor);
-            var pDescripcion = new NpgsqlParameter("@p_descripcion",
-                string.IsNullOrWhiteSpace(proyecto.Descripcion)
-                    ? (object)DBNull.Value
-                    : proyecto.Descripcion);
-
-            var pCreadoPor  = new NpgsqlParameter("@p_creado_por", proyecto.CreadoPor);
-
-            var parametros = new[] { pCodigo, pNombre, pProveedor, pDescripcion, pCreadoPor };
-
-            Console.WriteLine($"[DEBUG] CrearProyecto: Nombre={proyecto.Nombre}, Proveedor={proyecto.Proveedor}, CreadoPor={proyecto.CreadoPor}");
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen)
+                await conn.OpenAsync();
 
             try
             {
-                await _db.Database.ExecuteSqlRawAsync(sql, parametros);
+                await using var cmd = new NpgsqlCommand(sql, conn);
+
+                cmd.Parameters.AddWithValue("@p_codigo",
+                    string.IsNullOrWhiteSpace(proyecto.Codigo)
+                        ? (object)DBNull.Value
+                        : proyecto.Codigo.Trim());
+
+                cmd.Parameters.AddWithValue("@p_nombre", proyecto.Nombre);
+                cmd.Parameters.AddWithValue("@p_proveedor", proyecto.Proveedor);
+
+                cmd.Parameters.AddWithValue("@p_descripcion",
+                    string.IsNullOrWhiteSpace(proyecto.Descripcion)
+                        ? (object)DBNull.Value
+                        : proyecto.Descripcion!.Trim());
+
+                cmd.Parameters.AddWithValue("@p_creado_por", proyecto.CreadoPor);
+
+                var result = await cmd.ExecuteScalarAsync();
+                var codigo = Convert.ToString(result);
+
+                return codigo ?? string.Empty;
             }
             catch (PostgresException ex)
             {
                 Console.WriteLine($"[Postgres] {ex.MessageText}");
                 throw;
             }
+            finally
+            {
+                if (!wasOpen)
+                    await conn.CloseAsync();
+            }
         }
+
 
         // =======================
         // LISTAR PROYECTOS (ADMIN)
