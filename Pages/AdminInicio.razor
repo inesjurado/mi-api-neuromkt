@@ -4,11 +4,13 @@
 @inject IEProyecto EProyecto
 
 <!-- Título centrado -->
-<RadzenCard Style="margin-bottom: 1.5rem;">
-    <div style="text-align:center; font-size:1.2rem; font-weight:600;">
-        INICIO
-    </div>
-</RadzenCard>
+<div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                INICIO
+            </div>
+        </RadzenCard>
+</div>
 
 @if (!string.IsNullOrEmpty(mensajeError))
 {

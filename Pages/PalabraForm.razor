@@ -1,0 +1,133 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@using Npgsql
+@inject IEPalabra EPalabra
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>@(EsEdicion ? "Editar palabra" : "Nueva palabra")</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <div class="nf-dialog-form">
+                <div class="nf-form-field">
+                    <label>Palabra</label>
+                    <RadzenTextBox @bind-Value="texto"
+                                   Style="width:100%;" />
+                    @if (!string.IsNullOrEmpty(errorMsg))
+                    {
+                        <div class="nf-input-error">@errorMsg</div>
+                    }
+                </div>
+
+                <div class="nf-form-actions">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="check"
+                                  Disabled="@busy"
+                                  Click="Guardar"
+                                  Text="@(EsEdicion ? "Guardar" : "Añadir")" />
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                  Icon="close"
+                                  Style="margin-left:0.5rem;"
+                                  Click="Cerrar"
+                                  Text="Cancelar" />
+                </div>
+            </div>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter] public bool EsEdicion { get; set; }
+
+    // Cuando editas, viene la palabra original
+    [Parameter] public string? PalabraOriginal { get; set; }
+
+    // Devuelvo la palabra creada/actualizada
+    [Parameter] public EventCallback<string> OnGuardado { get; set; }
+
+    private string texto = string.Empty;
+    private bool busy = false;
+    private string? errorMsg;
+
+    protected override void OnParametersSet()
+    {
+        if (EsEdicion && !string.IsNullOrWhiteSpace(PalabraOriginal))
+        {
+            texto = PalabraOriginal;
+        }
+        else if (!EsEdicion)
+        {
+            texto = string.Empty;
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (busy) return;
+
+        errorMsg = null;
+
+        if (string.IsNullOrWhiteSpace(texto))
+        {
+            errorMsg = "La palabra no puede estar vacía.";
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            var palabraFinal = texto.Trim();
+
+            if (EsEdicion)
+            {
+                if (string.IsNullOrWhiteSpace(PalabraOriginal))
+                {
+                    errorMsg = "Error interno: falta la palabra a editar.";
+                    return;
+                }
+
+                await EPalabra.ActualizarPalabraAsync(PalabraOriginal, palabraFinal);
+            }
+            else
+            {
+                var modelo = new PalabraModel { Palabra = palabraFinal };
+                await EPalabra.CrearPalabraAsync(modelo);
+            }
+
+            await OnGuardado.InvokeAsync(palabraFinal);
+            await Cerrar();
+        }
+        catch (PostgresException ex)
+        {
+            errorMsg = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            errorMsg = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        errorMsg = null;
+        busy = false;
+        await VisibleChanged.InvokeAsync(false);
+    }
+}

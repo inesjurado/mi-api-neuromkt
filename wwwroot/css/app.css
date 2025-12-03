@@ -10,21 +10,31 @@ app {
     height: 100vh;
 }
 
-/* Opcional: color de fondo general */
+/* Fondo general */
 body {
     background-color: #f5f5f5;
 }
 
+/* ======================= */
+/*      PANTALLA LOGIN     */
+/* ======================= */
 
 .login-page {
-    min-height: 100vh;
+    height: 100vh;
+    /* antes: min-height */
+    box-sizing: border-box;
+    /* cuenta el padding dentro del 100vh */
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f5f5f5;
     position: relative;
-    padding: 2rem;
+    padding: 1.5rem;
+    /* puedes bajar a 1rem si aún ves algo de scroll */
+    overflow: hidden;
+    /* por si sobra 1px */
 }
+
 
 .login-card {
     width: 380px;
@@ -71,6 +81,10 @@ body {
     font-weight: bold;
 }
 
+/* ======================= */
+/*      LAYOUT GENERAL     */
+/* ======================= */
+
 .sidebar-content {
     display: flex;
     flex-direction: column;
@@ -82,11 +96,7 @@ body {
     padding: 0.75rem;
 }
 
-
-
-
-/* Página tipo mockup Neurofragancia */
-
+/* Página tipo Neurofragancia */
 .nf-page {
     background: #dde2ee;
     /* gris azulado de fondo */
@@ -95,64 +105,28 @@ body {
 
 .nf-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    /* separación entre título y otros bloques (si los hay) */
     margin-bottom: 2rem;
 }
 
+/* El título ocupa todo el ancho disponible, sin margen extra */
 .nf-title-card {
-    flex: 1;
-    margin-right: 2rem;
-    background: #dde2ee;
+    flex: 1 1 auto;
+    margin-right: 0;
+    /* <-- quitamos este margen */
+    background: #ffffff;
     border-radius: 16px;
     box-shadow: none;
 }
+
 
 .nf-title-text {
     text-align: center;
     padding: 1rem 0;
     font-weight: 600;
-}
-
-.nf-user-card {
-    width: 260px;
-    background: #f4eef8;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    box-shadow: none;
-}
-
-.nf-user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #d0c3f2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    margin: 0 0.75rem 0 1rem;
-}
-
-.nf-user-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.nf-user-name {
-    font-weight: 600;
-}
-
-.nf-user-role {
-    font-size: 0.8rem;
-    color: #666;
-}
-
-.nf-toolbar {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
 }
 
 .nf-table-card {
@@ -162,28 +136,38 @@ body {
     padding: 1rem 1.5rem;
 }
 
+.nf-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
 
+.nf-form-field {
+    margin-bottom: 1.25rem !important;
+}
 
-/* Modal casero centrado encima de todo */
+/* ======================= */
+/*          MODALES        */
+/* ======================= */
 
 .nf-modal-backdrop {
-    position: fixed;
+    position: fixed !important;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.35);
+    z-index: 9999 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
-    /* por encima de todo */
 }
 
 .nf-modal-card {
-    width: 480px;
+    width: 520px;
     max-width: 95%;
     border-radius: 16px;
+    z-index: 10000 !important;
 }
 
 .nf-modal-header {
@@ -199,6 +183,12 @@ body {
     background: transparent;
     font-size: 1.1rem;
     cursor: pointer;
+    color: #1F2D3D !important;
+    opacity: 0.7;
+}
+
+.nf-modal-close:hover {
+    opacity: 1;
 }
 
 .nf-dialog-form {
@@ -212,12 +202,10 @@ body {
     text-align: right;
 }
 
+/* ======================= */
+/*    LISTAS DE COLORES    */
+/* ======================= */
 
-
-/* COLORES Y PALABRAS */
-
-
-/* Cabecera de lista (texto + "Acciones" a la derecha) */
 .nf-list {
     margin-top: 1rem;
     padding: 1.5rem 2rem;
@@ -238,50 +226,13 @@ body {
     color: #888;
 }
 
-.nf-list-header-actions {
-    margin-right: 0.5rem;
-}
-
-/* Fila: texto a la izquierda, icono a la derecha en la misma línea */
-.nf-list-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.35rem 0;
-    font-size: 0.95rem;
-}
-
-.nf-list-actions .rz-button {
-    margin-left: 0.5rem;
-}
-
-/* Color picker centrado y más compacto */
-.nf-color-picker-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem 0 0.5rem 0;
-}
-
-/* Ocultar el input rojo de arriba para que parezca solo panel de color */
-.nf-color-picker-wrapper .rz-colorpicker-input {
-    display: none;
-}
-
-.nf-color-picker-wrapper .rz-colorpicker {
-    border-radius: 16px;
-    overflow: hidden;
-}
-
-/* Contenido de la parte izquierda de la fila de colores */
+/* Fila colores */
 .nf-color-main {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-/* Circulito de color */
 .nf-color-swatch {
     width: 24px;
     height: 24px;
@@ -290,7 +241,6 @@ body {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
-/* Textos del color */
 .nf-color-text {
     display: flex;
     flex-direction: column;
@@ -306,8 +256,29 @@ body {
     color: #999;
 }
 
+/* ColorPicker de los modales de color */
+.nf-color-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0 0.5rem 0;
+}
 
-/*   MESAJE DE ERROR   */
+/* Ocultar input del colorpicker para que solo se vea el panel de color */
+.nf-color-picker-wrapper .rz-colorpicker-input {
+    display: none;
+}
+
+.nf-color-picker-wrapper .rz-colorpicker {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* ======================= */
+/*      MENSAJES ERROR     */
+/* ======================= */
+
 .nf-input-error {
     margin-top: 0.25rem;
     font-size: 0.85rem;
@@ -315,7 +286,10 @@ body {
     /* rojo más marcado */
 }
 
-/*   FILTROS   */
+/* ======================= */
+/*   FILTROS DE FECHAS     */
+/* ======================= */
+
 .nf-fecha-header {
     display: flex;
     flex-direction: column;
@@ -336,56 +310,74 @@ body {
     width: 170px;
 }
 
-
-
 /* =============================== */
-/*      COLORES DE LOS TITULOS     */
+/*       TITULOS PRINCIPALES      */
 /* =============================== */
 
-.nf-title-text,
-.nf-modal-header span,
-.login-header h1 {
-    color: #1F2D3D !important;
-    /* azul oscuro apagado */
+/* Título grande de las páginas (nf-title-text) */
+.nf-title-text {
+    color: #083261 !important;
+    /* azul que me has pasado */
+    font-size: 1.6rem;
+    /* más grande */
+    font-weight: 700;
+    /* más “gordo” */
+    letter-spacing: 0.03em;
 }
 
-/* Si quieres que TODOS los h1/h2 sigan ese tono: */
+/* Títulos de modales y cabecera login en el mismo azul */
+.nf-modal-header span,
+.login-header h1 {
+    color: #083261 !important;
+}
+
+/* h1/h2/h3 generales en el mismo azul */
 h1,
 h2,
 h3 {
-    color: #1F2D3D;
+    color: #083261;
 }
 
+/* =============================== */
+/*         ESTILO BOTONES         */
+/* =============================== */
 
-
-/* PRIMARY */
-button.rz-button.rz-button-primary {
+/* PRIMARY (rojo tipo captura) */
+button.rz-button.rz-primary {
     background-color: #D22A2A !important;
     border-color: #D22A2A !important;
     color: #fff !important;
 }
 
-/* SECONDARY */
-button.rz-button.rz-button-secondary {
-    background-color: white !important;
-    border-color: #D22A2A !important;
-    color: #D22A2A !important;
+button.rz-button.rz-primary:hover:not(:disabled) {
+    background-color: #b82020 !important;
+    border-color: #b82020 !important;
 }
 
-/* LIGHT */
-button.rz-button.rz-button-light {
+/* SECONDARY (azul oscuro) */
+button.rz-button.rz-secondary {
+    background-color: #083261 !important;
+    border-color: #083261 !important;
+    /* azul oscuro */
+    color: #fff !important;
+}
+
+button.rz-button.rz-secondary:hover:not(:disabled) {
+    background-color: #e6edf7 !important;
+}
+
+/* LIGHT (neutro) */
+button.rz-button.rz-light {
     background-color: #f2f2f7 !important;
     color: #444 !important;
     border-color: #ddd !important;
 }
 
+button.rz-button.rz-light:hover:not(:disabled) {
+    background-color: #e4e4ed !important;
+}
 
-
-
-/* =============================== */
-/*      BOTONES DESHABILITADOS     */
-/* =============================== */
-
+/* Deshabilitados (cualquiera) */
 .rz-button:disabled,
 .rz-button[disabled] {
     background-color: #b1b1b1 !important;
@@ -395,42 +387,90 @@ button.rz-button.rz-button-light {
 }
 
 
-
 /* =============================== */
-/*   BOTÓN CERRAR (X) DE MODALES   */
+/* Barra superior del layout       */
 /* =============================== */
-
-.nf-modal-close {
-    color: #1F2D3D !important;
-    opacity: 0.7;
+/* Contenedor de toda la barra superior */
+.nf-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* izquierda ↔ derecha */
+    width: 100%;
 }
 
-.nf-modal-close:hover {
-    opacity: 1;
+/* Parte izquierda: botón hamburguesa + título */
+.nf-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nf-topbar-toggle {
+    margin-right: 0.25rem;
+}
+
+/* Parte derecha: tarjeta de usuario */
+.nf-topbar-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    /* por si acaso, pero con space-between ya vale */
 }
 
 
-
-.nf-form-field {
-    margin-bottom: 1.25rem !important;
+.nf-topbar-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #083261;
 }
 
-.nf-modal-backdrop {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.35);
-    z-index: 9999 !important;
+/* Contenedor que coloca la tarjeta de usuario pegada a la derecha */
+.nf-topbar-user {
+    margin-left: auto;
+    /* empuja al extremo derecho */
+    display: flex;
+    align-items: center;
+}
 
+/* Tarjeta usuario (la misma que ya tenías) */
+.nf-user-card {
+    width: 260px;
+    background: #6e748f00;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+    padding: 0.75rem 1rem;
+}
+
+.nf-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #dde2ee;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    color: #083261;
 }
 
-.nf-modal-card {
-    width: 520px;
-    max-width: 95%;
-    z-index: 10000 !important;
+.nf-user-info {
+    display: flex;
+    flex-direction: column;
 }
+
+.nf-user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #083261;
+}
+
+.nf-user-role {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Icono cerrar modal ya está arriba con nf-modal-close */

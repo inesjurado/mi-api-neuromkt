@@ -5,6 +5,7 @@
 @inject IEParticipante EParticipante
 @inject IJSRuntime JS
 @using Npgsql
+@inject IExportService ExportService
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -25,9 +26,10 @@
                   Click="@AbrirNuevoParticipante" />
 
         <RadzenButton Icon="file_download"
-                      Text="Descargar Participantes"
-                      ButtonStyle="ButtonStyle.Secondary"
-                      Disabled="true" />
+              Text="Descargar Participantes"
+              ButtonStyle="ButtonStyle.Secondary"
+              Disabled="@(!participantes.Any())"
+              Click="@DescargarParticipantes" />
     </div>
 
     <!-- Mensajes -->
@@ -223,6 +225,18 @@
             : $"Participante \"{email}\" creado correctamente.";
 
         await CargarParticipantesAsync();
+    }
+
+    private async Task DescargarParticipantes()
+    {
+        try
+        {
+            await ExportService.DescargarCsvAsync(participantes, "participantes.csv");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error al descargar los participantes: " + ex.Message;
+        }
     }
 
 }

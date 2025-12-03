@@ -5,6 +5,7 @@
 @inject IEFragancia EFragancia
 @inject IJSRuntime JS
 @using Npgsql
+@inject IExportService ExportService
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -25,9 +26,11 @@
                   Click="@AbrirNuevaFragancia" />
 
         <RadzenButton Icon="file_download"
-                      Text="Descargar Fragancias"
-                      ButtonStyle="ButtonStyle.Secondary"
-                      Disabled="true" />
+              Text="Descargar Fragancias"
+              ButtonStyle="ButtonStyle.Secondary"
+              Disabled="@(!fragancias.Any())"
+              Click="@DescargarFragancias" />
+
     </div>
 
     <!-- Mensajes -->
@@ -207,5 +210,18 @@
 
         await CargarFraganciasAsync();
     }
+    
+    private async Task DescargarFragancias()
+    {
+        try
+        {
+            await ExportService.DescargarCsvAsync(fragancias, "fragancias.csv");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error al descargar las fragancias: " + ex.Message;
+        }
+    }
+
 }
 

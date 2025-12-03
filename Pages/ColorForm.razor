@@ -1,0 +1,147 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@using Npgsql
+@inject IEColor EColor
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>@(EsEdicion ? "Editar color" : "Nuevo color")</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <div class="nf-dialog-form">
+                <div class="nf-form-field">
+                    <label>Color</label>
+                    <RadzenColorPicker @bind-Value="colorHex"
+                                       Style="width:100%; max-width:420px;" />
+                    @if (!string.IsNullOrEmpty(errorMsg))
+                    {
+                        <div class="nf-input-error">@errorMsg</div>
+                    }
+                </div>
+
+                <div class="nf-form-actions">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="check"
+                                  Disabled="@busy"
+                                  Click="Guardar"
+                                  Text="@(EsEdicion ? "Guardar" : "Añadir")" />
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                  Icon="close"
+                                  Style="margin-left:0.5rem;"
+                                  Click="Cerrar"
+                                  Text="Cancelar" />
+                </div>
+            </div>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    // true = edit, false = nuevo
+    [Parameter] public bool EsEdicion { get; set; }
+
+    // Cuando editas, aquí viene el color actual
+    [Parameter] public ColorModel? ColorActual { get; set; }
+
+    // Devuelvo el HEX que se ha creado/actualizado
+    [Parameter] public EventCallback<string> OnGuardado { get; set; }
+
+    private string colorHex = "#FF0000";
+    private bool busy = false;
+    private string? errorMsg;
+
+    protected override void OnParametersSet()
+    {
+        if (EsEdicion && ColorActual != null)
+        {
+            colorHex = ColorActual.Hex;
+        }
+        else if (!EsEdicion)
+        {
+            // alta
+            colorHex = ColorActual?.Hex ?? "#FF0000";
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (busy) return;
+
+        errorMsg = null;
+
+        if (string.IsNullOrWhiteSpace(colorHex))
+        {
+            errorMsg = "Selecciona un color válido.";
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            if (EsEdicion)
+            {
+                // actualizar
+                if (ColorActual == null)
+                {
+                    errorMsg = "Error interno: falta el color a editar.";
+                    return;
+                }
+
+                var nuevoModelo = new ColorModel
+                {
+                    Hex = colorHex.Trim(),
+                    Nombre = ColorActual.Nombre   // mantenemos el nombre que ya tenía
+                };
+
+                await EColor.ActualizarColorAsync(ColorActual.Hex, nuevoModelo);
+            }
+            else
+            {
+                // alta
+                var modelo = new ColorModel
+                {
+                    Hex = colorHex.Trim(),
+                    // Nombre es nullable en tu BD, lo dejamos vacío
+                    Nombre = null
+                };
+
+                await EColor.CrearColorAsync(modelo);
+            }
+
+            await OnGuardado.InvokeAsync(colorHex.Trim());
+            await Cerrar();
+        }
+        catch (PostgresException ex)
+        {
+            errorMsg = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            errorMsg = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        errorMsg = null;
+        busy = false;
+        await VisibleChanged.InvokeAsync(false);
+    }
+}

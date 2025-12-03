@@ -1,0 +1,253 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@using System.Text.RegularExpressions
+@using Npgsql
+@inject IEUsuario EUsuario
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>@(EsEdicion ? "Editar perfil" : "Nuevo perfil")</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <RadzenTemplateForm TItem="UsuarioModel"
+                                Data="@ModeloInterno"
+                                Submit="@ProcesarGuardar">
+
+                <div class="nf-dialog-form">
+
+                    <div class="nf-form-field">
+                        <label>Email</label>
+                        <RadzenTextBox @bind-Value="ModeloInterno.Email"
+                                       Style="width:100%;"
+                                       Disabled="@EsEdicion" />
+                        @if (!string.IsNullOrEmpty(ErrorEmail))
+                        {
+                            <div class="nf-input-error">@ErrorEmail</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Nombre</label>
+                        <RadzenTextBox @bind-Value="ModeloInterno.Nombre"
+                                       Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(ErrorNombre))
+                        {
+                            <div class="nf-input-error">@ErrorNombre</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Rol</label>
+                        <RadzenDropDown @bind-Value="ModeloInterno.Rol"
+                                        Data="@roles"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        Placeholder="Selecciona un rol"
+                                        Style="width:100%;" />
+
+                        @if (!string.IsNullOrEmpty(ErrorRol))
+                        {
+                            <div class="nf-input-error">@ErrorRol</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-field">
+                        <label>Contraseña</label>
+                        <RadzenPassword @bind-Value="ModeloInterno.Password"
+                                        Style="width:100%;" />
+
+                        @if (!string.IsNullOrEmpty(ErrorPassword))
+                        {
+                            <div class="nf-input-error">@ErrorPassword</div>
+                        }
+                    </div>
+
+                    <div class="nf-form-actions">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="check"
+                                      Disabled="@Busy"
+                                      Text="@(
+                                          Busy
+                                          ? (EsEdicion ? "Guardando..." : "Creando...")
+                                          : (EsEdicion ? "Guardar cambios" : "Crear usuario")
+                                      )" />
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Text="Cancelar"
+                                      Icon="close"
+                                      Click="Cerrar"
+                                      Style="margin-left:0.5rem;" />
+                    </div>
+
+                </div>
+
+            </RadzenTemplateForm>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+
+    // ==== PARÁMETROS ====
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    // true = edición, false = nuevo
+    [Parameter] public bool EsEdicion { get; set; }
+
+    // El usuario que se edita (null en nuevo)
+    [Parameter] public UsuarioModel? Usuario { get; set; }
+
+    // Devuelvo email del creado o editado
+    [Parameter] public EventCallback<string> OnGuardado { get; set; }
+
+
+    // ==== ESTADO INTERNO ====
+    private UsuarioModel ModeloInterno = new();
+    private bool Busy = false;
+
+    private string? ErrorEmail;
+    private string? ErrorNombre;
+    private string? ErrorRol;
+    private string? ErrorPassword;
+
+    private IEnumerable<object> roles = new[]
+    {
+        new { Text = "Administrador", Value = "Administrador"},
+        new { Text = "Investigador",  Value = "Investigador" },
+    };
+
+
+    protected override void OnParametersSet()
+    {
+        LimpiarErrores();
+
+        if (EsEdicion && Usuario != null)
+        {
+            ModeloInterno = new UsuarioModel
+            {
+                Email = Usuario.Email,
+                Nombre = Usuario.Nombre,
+                Rol = Usuario.Rol,
+                Password = ""
+            };
+        }
+        else
+        {
+            ModeloInterno = new UsuarioModel
+            {
+                Email = "",
+                Nombre = "",
+                Rol = "Investigador",
+                Password = ""
+            };
+        }
+    }
+    private async Task ProcesarGuardar()
+    {
+        LimpiarErrores();
+
+        if (!ValidarFormulario())
+            return;
+
+        Busy = true;
+
+        try
+        {
+            if (EsEdicion)
+            {
+                await EUsuario.ActualizarUsuarioAsync(ModeloInterno);
+            }
+            else
+            {
+                await EUsuario.CrearUsuarioAsync(ModeloInterno);
+            }
+
+            await OnGuardado.InvokeAsync(ModeloInterno.Email);
+            await Cerrar();
+        }
+        catch (PostgresException ex)
+        {
+            ErrorEmail = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            ErrorEmail = "Error inesperado: " + ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+    private bool ValidarFormulario()
+    {
+        var valido = true;
+
+        if (string.IsNullOrWhiteSpace(ModeloInterno.Email))
+        {
+            ErrorEmail = "El email es obligatorio.";
+            valido = false;
+        }
+        else
+        {
+            var pattern = @"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$";
+            if (!Regex.IsMatch(ModeloInterno.Email.Trim(), pattern))
+            {
+                ErrorEmail = "Formato de email incorrecto.";
+                valido = false;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(ModeloInterno.Nombre))
+        {
+            ErrorNombre = "El nombre es obligatorio.";
+            valido = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(ModeloInterno.Rol))
+        {
+            ErrorRol = "Selecciona un rol.";
+            valido = false;
+        }
+
+        if (!EsEdicion)
+        {
+            if (string.IsNullOrWhiteSpace(ModeloInterno.Password) || ModeloInterno.Password.Length < 8)
+            {
+                ErrorPassword = "La contraseña debe tener mínimo 8 caracteres.";
+                valido = false;
+            }
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(ModeloInterno.Password) && ModeloInterno.Password.Length < 8)
+            {
+                ErrorPassword = "La nueva contraseña debe tener mínimo 8 caracteres.";
+                valido = false;
+            }
+        }
+
+        return valido;
+    }
+
+    private void LimpiarErrores()
+    {
+        ErrorEmail = null;
+        ErrorNombre = null;
+        ErrorRol = null;
+        ErrorPassword = null;
+    }
+    private async Task Cerrar()
+    {
+        await VisibleChanged.InvokeAsync(false);
+    }
+}

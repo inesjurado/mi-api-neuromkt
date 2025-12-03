@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @inject IEUsuario EUsuario
 @using Npgsql
+@inject IExportService ExportService
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -25,9 +26,10 @@
                       Click="@AbrirNuevoProyecto" />
 
         <RadzenButton Icon="file_download"
-                      Text="Descargar Proyectos"
-                      ButtonStyle="ButtonStyle.Secondary"
-                      Disabled="true" />
+                        Text="Descargar Proyectos"
+                        ButtonStyle="ButtonStyle.Secondary"
+                        Disabled="@(!proyectos.Any())"
+                        Click="@DescargarProyectos" />
     </div>
 
     <!-- Mensajes -->
@@ -382,10 +384,16 @@
         }
     }
 
-
-
-
-
-
+    private async Task DescargarProyectos()
+    {
+        try
+        {
+            await ExportService.DescargarCsvAsync(proyectos, "proyectos.csv");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error al descargar los proyectos: " + ex.Message;
+        }
+    }
 
 }

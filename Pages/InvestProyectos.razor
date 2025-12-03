@@ -4,8 +4,10 @@
 @inject IEProyecto EProyecto
 @inject IJSRuntime JS
 @inject IEUsuario EUsuario
+@inject IEPrueba EPrueba
 @using Npgsql
 @inject NavigationManager Nav
+@inject IExportService ExportService
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -28,9 +30,10 @@
                           Click="@NuevoProyecto" />
 
             <RadzenButton Icon="file_download"
-                          Text="Descargar proyectos"
-                          ButtonStyle="ButtonStyle.Secondary"
-                          Click="@DescargarProyectos" />
+                        Text="Descargar Proyectos"
+                        ButtonStyle="ButtonStyle.Secondary"
+                        Disabled="@(!proyectos.Any())"
+                        Click="@DescargarProyectos" />
         </div>
 
         @if (!string.IsNullOrEmpty(mensajeOk))
@@ -87,6 +90,12 @@
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => VerProyecto(p))" />
+                            
+                        <RadzenButton Icon="play_arrow"
+                                        Size="ButtonSize.Small"
+                                        ButtonStyle="ButtonStyle.Light"
+                                        Style="margin-right:0.5rem;"
+                                        Click="@(() => AbrirDialogoEmpezar(p))" />
 
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
@@ -101,11 +110,76 @@
 
 </RadzenCard>
 
+@if (empezarDialogVisible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>
+                    Empezar prueba
+                    @if (proyectoSeleccionado != null)
+                    {
+                        <text> – @proyectoSeleccionado.Nombre</text>
+                    }
+                </span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="CerrarDialogoEmpezar">
+                    ✕
+                </button>
+            </div>
+
+            <div class="nf-dialog-form">
+                <div class="nf-form-field">
+                    <label>Participante</label>
+
+                    <RadzenDropDown Data="@pruebasProyecto"
+                                    TextProperty="ParticipanteEmail"
+                                    ValueProperty="Codigo"
+                                    @bind-Value="pruebaSeleccionadaCodigo"
+                                    Style="width:100%;"
+                                    Placeholder="Selecciona un participante" />
+
+                    @if (!string.IsNullOrEmpty(dialogError))
+                    {
+                        <div class="nf-input-error">@dialogError</div>
+                    }
+                </div>
+
+                <div class="nf-form-actions">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="play_arrow"
+                                  Disabled="@(!PuedeConfirmarEmpezar)"
+                                  Click="@ConfirmarEmpezarPrueba"
+                                  Text="Empezar" />
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                  Text="Cancelar"
+                                  Icon="close"
+                                  Click="@CerrarDialogoEmpezar"
+                                  Style="margin-left:0.5rem;" />
+                </div>
+            </div>
+        </RadzenCard>
+    </div>
+}
+
+
 @code {
     private List<ProyectoResumenModel> proyectos = new();
     private bool busy = false;
     private string? mensajeOk;
     private string? mensajeError;
+
+    private bool empezarDialogVisible = false;
+    private ProyectoResumenModel? proyectoSeleccionado;
+    private List<PruebaModel> pruebasProyecto = new();
+    private string? pruebaSeleccionadaCodigo;
+    private string? dialogError;
+    private bool empezarBusy = false;
+
+    private bool PuedeConfirmarEmpezar =>
+        !string.IsNullOrEmpty(pruebaSeleccionadaCodigo) && !empezarBusy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,7 +208,7 @@
     private void VerProyecto(ProyectoResumenModel p)
     {
         // Vista detalle/edición del proyecto
-        Nav.NavigateTo($"/investigador/proyectos/{p.Codigo}");
+        Nav.NavigateTo($"/nuevoProyecto/{p.Codigo}");
     }
 
     private async Task BorrarProyecto(ProyectoResumenModel p)
@@ -170,11 +244,79 @@
         }
     }
 
-    private Task DescargarProyectos()
+    private async Task AbrirDialogoEmpezar(ProyectoResumenModel p)
     {
-        // Aquí luego metes la lógica de descarga (CSV/Excel) para el investigador
-        // por ahora dejamos un TODO o un simple console log.
-        Console.WriteLine("TODO: descarga de proyectos investigador");
-        return Task.CompletedTask;
+        if (busy) return;
+
+        dialogError = null;
+        proyectoSeleccionado = p;
+        pruebasProyecto = new List<PruebaModel>();
+        pruebaSeleccionadaCodigo = null;
+
+        try
+        {
+            // Cargamos las pruebas (participantes) de ese proyecto
+            pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(p.Codigo);
+            empezarDialogVisible = true;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error cargando participantes del proyecto: " + ex.Message;
+        }
+    }
+
+    private void CerrarDialogoEmpezar()
+    {
+        empezarDialogVisible = false;
+        proyectoSeleccionado = null;
+        pruebasProyecto = new();
+        pruebaSeleccionadaCodigo = null;
+        dialogError = null;
+    }
+
+    private async Task ConfirmarEmpezarPrueba()
+    {
+        if (string.IsNullOrEmpty(pruebaSeleccionadaCodigo))
+            return;
+
+        empezarBusy = true;
+        dialogError = null;
+
+        try
+        {
+            // Actualiza fecha_prueba con NOW() en la BD
+            await EPrueba.ActualizarFechaPruebaAsync(pruebaSeleccionadaCodigo);
+
+            empezarDialogVisible = false;
+            mensajeOk = "Prueba iniciada correctamente para el participante seleccionado.";
+            mensajeError = null;
+
+            // Si quieres abrir directamente la vista de prueba, pon aquí el NavigateTo:
+            // Nav.NavigateTo($"/investigador/prueba/{pruebaSeleccionadaCodigo}");
+        }
+        catch (PostgresException ex)
+        {
+            dialogError = ex.MessageText;
+        }
+        catch (Exception ex)
+        {
+            dialogError = "Error al iniciar la prueba: " + ex.Message;
+        }
+        finally
+        {
+            empezarBusy = false;
+        }
+    }
+
+    private async Task DescargarProyectos()
+    {
+        try
+        {
+            await ExportService.DescargarCsvAsync(proyectos, "proyectos.csv");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error al descargar los proyectos: " + ex.Message;
+        }
     }
 }

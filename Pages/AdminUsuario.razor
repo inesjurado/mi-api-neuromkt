@@ -4,216 +4,120 @@
 @using Npgsql
 @inject IJSRuntime JS
 @inject IEUsuario EUsuario
-@using System.Text.RegularExpressions
+@inject IExportService ExportService
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera: título centrado + tarjeta usuario -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
-            <div class="nf-title-text">
-                PERFILES
-            </div>
+            <div class="nf-title-text">PERFILES</div>
         </RadzenCard>
     </div>
 
-    <!-- Barra de acciones -->
+    <!-- Toolbar -->
     <div class="nf-toolbar">
         <RadzenButton Icon="person_add"
-              Text="Nuevo Perfil"
-              ButtonStyle="ButtonStyle.Primary"
-              Disabled="@busy"
-              Click="@NuevoUsuario" />
+                      Text="Nuevo Perfil"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Disabled="@busy"
+                      Click="@NuevoUsuario" />
 
         <RadzenButton Icon="file_download"
-                      Text="Descargar Perfiles"
-                      ButtonStyle="ButtonStyle.Secondary" />
+              Text="Descargar Usuarios"
+              ButtonStyle="ButtonStyle.Secondary"
+              Disabled="@(!usuarios.Any())"
+              Click="@DescargarUsuarios" />
     </div>
 
     <!-- Mensajes -->
     @if (!string.IsNullOrEmpty(mensajeOk))
     {
-        <RadzenAlert Severity="AlertSeverity.Success"
-                     Style="margin-bottom:1rem;">
+        <RadzenAlert Severity="AlertSeverity.Success" Style="margin-bottom:1rem;">
             @mensajeOk
         </RadzenAlert>
     }
 
     @if (!string.IsNullOrEmpty(mensajeError))
     {
-        <RadzenAlert Severity="AlertSeverity.Error"
-                     Style="margin-bottom:1rem;">
+        <RadzenAlert Severity="AlertSeverity.Error" Style="margin-bottom:1rem;">
             @mensajeError
         </RadzenAlert>
     }
 
-    <!-- Tarjeta central con tabla de investigadores -->
+    <!-- Tabla -->
     <RadzenCard Class="nf-table-card">
         <RadzenDataGrid TItem="UsuarioModel"
-                Data="@usuarios"
-                RowHover="true"
-                ShowPagingSummary="false"
-                AllowPaging="false"
-                AllowFiltering="true"
-                FilterMode="FilterMode.Advanced"
-                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                Style="width:100%;">
+                        Data="@usuarios"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        AllowPaging="false"
+                        RowHover="true"
+                        Style="width:100%;">
+
             <Columns>
-                <RadzenDataGridColumn TItem="UsuarioModel"
-                                    Property="Nombre"
-                                    Title="Perfil"
-                                    Filterable="true"
-                                    FilterOperator="FilterOperator.Contains" />
 
                 <RadzenDataGridColumn TItem="UsuarioModel"
-                                    Property="Email"
-                                    Title="Email"
-                                    Filterable="true"
-                                    FilterOperator="FilterOperator.Contains" />
+                                      Property="Nombre"
+                                      Title="Perfil"
+                                      Filterable="true" />
 
                 <RadzenDataGridColumn TItem="UsuarioModel"
-                                    Property="Rol"
-                                    Title="Rol"
-                                    Filterable="true"
-                                    FilterOperator="FilterOperator.Contains" />
+                                      Property="Email"
+                                      Title="Email" />
 
                 <RadzenDataGridColumn TItem="UsuarioModel"
-                                    Title="Acciones"
-                                    Width="120px"
-                                    Filterable="false">
+                                      Property="Rol"
+                                      Title="Rol" />
+
+                <RadzenDataGridColumn TItem="UsuarioModel"
+                                      Title="Acciones"
+                                      Width="120px"
+                                      Filterable="false">
                     <Template Context="item">
+
                         <RadzenButton Icon="edit"
-                                    Size="ButtonSize.Small"
-                                    ButtonStyle="ButtonStyle.Light"
-                                    Style="margin-right:0.5rem;"
-                                    Click="@(() => OnEditarUsuario(item))" />
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => EditarUsuario(item))"
+                                      Style="margin-right:0.5rem;" />
 
                         <RadzenButton Icon="delete"
-                                    Size="ButtonSize.Small"
-                                    ButtonStyle="ButtonStyle.Light"
-                                    Click="@(() => OnBorrarUsuario(item))" />
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => BorrarUsuario(item))" />
+
                     </Template>
                 </RadzenDataGridColumn>
+
             </Columns>
+
         </RadzenDataGrid>
     </RadzenCard>
 </RadzenCard>
 
-@* ==== MODAL ENCIMA DE TODO ==== *@
-@if (nuevoDialogVisible)
-{
-    <div class="nf-modal-backdrop">
-        <RadzenCard Class="nf-modal-card">
-            <div class="nf-modal-header">
-                <span>@(esEdicion ? "Editar perfil" : "Nuevo perfil")</span>
-                <button type="button"
-                        class="nf-modal-close"
-                        @onclick="() => nuevoDialogVisible = false">
-                    ✕
-                </button>
-            </div>
 
-            <RadzenTemplateForm TItem="UsuarioModel"
-                                Data="@modelo"
-                                Submit="@OnSubmit">
-
-                <div class="nf-dialog-form">
-                    <div class="nf-form-field">
-                        <label>Email</label>
-                        <RadzenTextBox @bind-Value="modelo.Email"
-                                    Name="Email"
-                                    Style="width:100%;"
-                                    Disabled="@esEdicion" />
-                        @if (!string.IsNullOrEmpty(errorEmail))
-                        {
-                            <div class="nf-input-error">@errorEmail</div>
-                        }
-                    </div>
-                    <div class="nf-form-field">
-                        <label>Nombre</label>
-                        <RadzenTextBox @bind-Value="modelo.Nombre"
-                                    Name="Nombre"
-                                    Style="width:100%;" />
-                        @if (!string.IsNullOrEmpty(errorNombre))
-                        {
-                            <div class="nf-input-error">@errorNombre</div>
-                        }
-                    </div>
-                    <div class="nf-form-field">
-                        <label>Rol</label>
-                        <RadzenDropDown @bind-Value="modelo.Rol"
-                                        Name="Rol"
-                                        Style="width:100%;"
-                                        Data="@roles"
-                                        TextProperty="Text"
-                                        ValueProperty="Value"
-                                        Placeholder="Selecciona un rol" />
-                        @if (!string.IsNullOrEmpty(errorRol))
-                        {
-                            <div class="nf-input-error">@errorRol</div>
-                        }
-                    </div>
-                    <div class="nf-form-field">
-                        <label>Contraseña</label>
-                        <RadzenPassword @bind-Value="modelo.Password"
-                                        Name="Password"
-                                        Style="width:100%;" />
-                        @if (!string.IsNullOrEmpty(errorPassword))
-                        {
-                            <div class="nf-input-error">@errorPassword</div>
-                        }
-                    </div>
-                    <div class="nf-form-actions">
-                        <RadzenButton ButtonType="ButtonType.Submit"
-                                      ButtonStyle="ButtonStyle.Primary"
-                                      Icon="check"
-                                      Disabled="@busy"
-                                      Text="@( busy 
-                                              ? (esEdicion ? "Guardando..." : "Creando..." )
-                                              : (esEdicion ? "Guardar cambios" : "Crear usuario") )" />
-
-                        <RadzenButton ButtonStyle="ButtonStyle.Light"
-                                      Text="Cancelar"
-                                      Icon="close"
-                                      Click="@(() => nuevoDialogVisible = false)"
-                                      Style="margin-left:0.5rem;" />
-                    </div>
-                </div>
-            </RadzenTemplateForm>
-        </RadzenCard>
-    </div>
-}
-
+<!-- ==== Component popup ==== -->
+<UsuarioForm Visible="@popupVisible"
+             VisibleChanged="@(v => popupVisible = v)"
+             EsEdicion="@popupEsEdicion"
+             Usuario="@usuarioSeleccionado"
+             OnGuardado="@OnGuardadoUsuario" />
 
 @code {
-    private List<UsuarioModel> usuarios = new();
 
-    private UsuarioModel modelo = new UsuarioModel
-    {
-        Rol = "Investigador"
-    };
+    private List<UsuarioModel> usuarios = new();
+    private bool busy = false;
 
     private string? mensajeOk;
     private string? mensajeError;
-    private bool busy = false;
-    private bool nuevoDialogVisible = false;
-    private bool esEdicion = false;
 
-    // Errores por campo (solo para el formulario del modal)
-    private string? errorEmail;
-    private string? errorNombre;
-    private string? errorRol;
-    private string? errorPassword;
+    // Estado del popup
+    private bool popupVisible = false;
+    private bool popupEsEdicion = false;
+    private UsuarioModel? usuarioSeleccionado;
 
 
-
-    private IEnumerable<object> roles = new[]
-    {
-        new { Text = "Administrador", Value = "Administrador" },
-        new { Text = "Investigador",  Value = "Investigador"  }
-    };
-
-    // Cargar usuarios de la BD al entrar en la página
     protected override async Task OnInitializedAsync()
     {
         await CargarUsuariosAsync();
@@ -231,153 +135,55 @@
         }
     }
 
-
-    private async Task OnSubmit()
+    // ======== NUEVO =========
+    private void NuevoUsuario()
     {
+        popupEsEdicion = false;
+        usuarioSeleccionado = null;
+        popupVisible = true;
         mensajeOk = null;
         mensajeError = null;
-        LimpiarErroresFormulario();
-
-        // ==== VALIDACIÓN FRONT ====
-        var valido = true;
-
-        if (string.IsNullOrWhiteSpace(modelo.Email))
-        {
-            errorEmail = "El email es obligatorio.";
-            valido = false;
-        }
-        else
-        {
-            var email = modelo.Email.Trim();
-
-            // patrón sencillo: algo@algo.algo (com, es, net, ...)
-            var pattern = @"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$";
-
-            if (!Regex.IsMatch(email, pattern, RegexOptions.IgnoreCase))
-            {
-                errorEmail = "El email debe tener el formato nombre@dominio.com o .es.";
-                valido = false;
-            }
-        }
-        if (string.IsNullOrWhiteSpace(modelo.Nombre))
-        {
-            errorNombre = "El nombre es obligatorio.";
-            valido = false;
-        }
-
-        if (string.IsNullOrWhiteSpace(modelo.Rol))
-        {
-            errorRol = "Debes seleccionar un rol.";
-            valido = false;
-        }
-
-        // Para ALTAS: contraseña obligatoria y con longitud mínima
-        if (!esEdicion)
-        {
-            if (string.IsNullOrWhiteSpace(modelo.Password))
-            {
-                errorPassword = "La contraseña es obligatoria.";
-                valido = false;
-            }
-            else if (modelo.Password.Length < 8)
-            {
-                errorPassword = "La contraseña debe tener al menos 8 caracteres.";
-                valido = false;
-            }
-        }
-        else
-        {
-            // En edición: solo validar longitud si el usuario ha rellenado algo
-            if (!string.IsNullOrEmpty(modelo.Password) && modelo.Password.Length < 8)
-            {
-                errorPassword = "Si cambias la contraseña, debe tener al menos 8 caracteres.";
-                valido = false;
-            }
-        }
-
-        if (!valido)
-        {
-            // No llamamos a la API si hay errores de validación
-            return;
-        }
-
-        // ==== SI TODO ES OK, LLAMAMOS A LA API ====
-        busy = true;
-
-        try
-        {
-            if (esEdicion)
-            {
-                await EUsuario.ActualizarUsuarioAsync(modelo);
-                mensajeOk = $"Usuario {modelo.Email} actualizado correctamente.";
-            }
-            else
-            {
-                await EUsuario.CrearUsuarioAsync(modelo);
-                mensajeOk = $"Usuario {modelo.Email} creado correctamente.";
-            }
-
-            await CargarUsuariosAsync();
-
-            modelo = new UsuarioModel { Rol = "Investigador" };
-            nuevoDialogVisible = false;
-            esEdicion = false;
-        }
-        catch (PostgresException ex)
-        {
-            mensajeError = ex.MessageText;
-        }
-        catch (Exception ex)
-        {
-            mensajeError = "Error inesperado: " + ex.Message;
-        }
-        finally
-        {
-            busy = false;
-        }
     }
 
-
-    private void OnEditarUsuario(UsuarioModel usuario)
+    // ======== EDITAR =========
+    private void EditarUsuario(UsuarioModel u)
     {
-        esEdicion = true;
-        modelo = new UsuarioModel
-        {
-            Email = usuario.Email,
-            Nombre = usuario.Nombre,
-            Rol = usuario.Rol,
-            Password = string.Empty   // nunca mostramos la real
-        };
-        LimpiarErroresFormulario();
-        nuevoDialogVisible = true;
+        popupEsEdicion = true;
+        usuarioSeleccionado = u;
+        popupVisible = true;
+        mensajeOk = null;
+        mensajeError = null;
     }
 
-
-    private async Task OnBorrarUsuario(UsuarioModel usuario)
+    private async Task OnGuardadoUsuario(string email)
     {
-        if (busy)
-            return;
+        await CargarUsuariosAsync();
+        mensajeOk = popupEsEdicion
+            ? $"Usuario {email} actualizado correctamente."
+            : $"Usuario {email} creado correctamente.";
+    }
 
-        // Confirmación sencilla con window.confirm
-        var mensajeConfirmacion = $"¿Seguro que quieres eliminar al usuario {usuario.Email}?";
-        var confirmar = await JS.InvokeAsync<bool>("confirm", mensajeConfirmacion);
+    // ======== BORRAR =========
+    private async Task BorrarUsuario(UsuarioModel usuario)
+    {
+        if (busy) return;
+
+        var confirmar = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"¿Seguro que quieres eliminar al usuario {usuario.Email}?");
 
         if (!confirmar)
             return;
 
+        busy = true;
         mensajeOk = null;
         mensajeError = null;
-        busy = true;
 
         try
         {
-            // Llama a d_usuario a través del servicio
             await EUsuario.EliminarUsuarioAsync(usuario.Email);
-
-            mensajeOk = $"Usuario {usuario.Email} eliminado correctamente.";
-
-            // Recargar la tabla con los datos reales
             await CargarUsuariosAsync();
+            mensajeOk = $"Usuario {usuario.Email} eliminado correctamente.";
         }
         catch (PostgresException ex)
         {
@@ -393,31 +199,15 @@
         }
     }
 
-    private void NuevoUsuario()
+    private async Task DescargarUsuarios()
     {
-        esEdicion = false;
-        modelo = new UsuarioModel
+        try
         {
-            Email = string.Empty,
-            Nombre = string.Empty,
-            Rol = "Investigador",
-            Password = string.Empty
-        };
-        LimpiarErroresFormulario();
-        nuevoDialogVisible = true;
+            await ExportService.DescargarCsvAsync(usuarios, "usuarios.csv");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = "Error al descargar los usuarios: " + ex.Message;
+        }
     }
-
-
-    private void LimpiarErroresFormulario()
-    {
-        errorEmail = null;
-        errorNombre = null;
-        errorRol = null;
-        errorPassword = null;
-        mensajeError = null;
-    }
-
-
-
 }
-

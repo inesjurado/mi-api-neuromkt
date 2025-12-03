@@ -48,6 +48,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Vc3VhcmlvLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/ColorForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ29sb3JGb3JtLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestFragancias.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0RnJhZ2FuY2lhcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -76,12 +80,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9Qcm95ZWN0b0ludmVzdGlnYWRvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PalabraForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUGFsYWJyYUZvcm0ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/UsuarioForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVXN1YXJpb0Zvcm0ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/inesjuradorichards/Documents/NeuromktApi/Shared/BlankLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL0JsYW5rTGF5b3V0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/Shared/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL01haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Shared/UserHeaderCard.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL1VzZXJIZWFkZXJDYXJkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/_Imports.razor]

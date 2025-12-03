@@ -31,6 +31,7 @@ builder.Services.AddScoped<IEProyectoFragancia, EProyectoFragancia>();
 builder.Services.AddScoped<IEPrueba, EPrueba>();
 builder.Services.AddScoped<IEProyectoColor, EProyectoColor>();
 builder.Services.AddScoped<IEProyectoPalabra, EProyectoPalabra>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 
 var app = builder.Build();

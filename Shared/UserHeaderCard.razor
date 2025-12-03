@@ -1,0 +1,49 @@
+@inject UserSession UserSession
+
+<div class="nf-user-card">
+    <div class="nf-user-avatar">
+        @Iniciales
+    </div>
+    <div class="nf-user-info">
+        <div class="nf-user-name">@NombreMostrado</div>
+        <div class="nf-user-role">@RolMostrado</div>
+    </div>
+</div>
+
+@code {
+    private string Email => UserSession.Email ?? string.Empty;
+    private string Role  => UserSession.Role  ?? string.Empty;
+
+    private string NombreMostrado
+        => string.IsNullOrWhiteSpace(Email)
+            ? "Usuario"
+            : Email.Split('@')[0];
+
+    private string RolMostrado
+        => string.IsNullOrWhiteSpace(Role) ? "Investigador" : Role;
+
+    private string Iniciales
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Email))
+                return "?";
+
+            var local = Email.Split('@')[0];
+            if (string.IsNullOrWhiteSpace(local))
+                return "?";
+
+            // 👇 aquí el cambio importante
+            var separadores = new[] { '.', '-', '_', ' ' };
+            var partes = local.Split(separadores, StringSplitOptions.RemoveEmptyEntries);
+
+            if (partes.Length == 0)
+                return local[0].ToString().ToUpper();
+
+            if (partes.Length == 1)
+                return partes[0].Substring(0, 1).ToUpper();
+
+            return (partes[0][0].ToString() + partes[1][0]).ToUpper();
+        }
+    }
+}

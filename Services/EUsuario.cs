@@ -16,6 +16,7 @@ namespace NeuromktApi.Services
         Task ActualizarUsuarioAsync(UsuarioModel usuario, bool? activo = null);
         Task EliminarUsuarioAsync(string email);
         Task<(bool Ok, string? Rol)> LoginAsync(string email, string password);
+        Task<UsuarioModel> ObtenerUsuarioAsync(string email);
     }
 
     public class EUsuario : IEUsuario
@@ -202,6 +203,55 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
+
+        public async Task<UsuarioModel> ObtenerUsuarioAsync(string email)
+        {
+            // Usamos la misma conexión que en ListarUsuariosAsync
+            var conn = _db.Database.GetDbConnection();
+
+            try
+            {
+                await conn.OpenAsync();
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT email, nombre, rol
+                    FROM neuromkt.usuarios
+                    WHERE email = @p_email;
+                ";
+
+                var pEmail = cmd.CreateParameter();
+                pEmail.ParameterName = "@p_email";
+                pEmail.Value = email.Trim().ToLower();
+                cmd.Parameters.Add(pEmail);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                if (!await reader.ReadAsync())
+                {
+                    throw new Exception($"Usuario {email} no encontrado.");
+                }
+
+                return new UsuarioModel
+                {
+                    Email    = (string)reader["email"],
+                    Nombre   = reader["nombre"] as string ?? string.Empty,
+                    Rol      = reader["rol"] as string ?? string.Empty,
+                    // nunca devolvemos la password real
+                    Password = string.Empty
+                };
+            }
+            catch (PostgresException ex)
+            {
+                Console.WriteLine($"[Postgres] {ex.MessageText}");
+                throw;
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
+
 
 
 

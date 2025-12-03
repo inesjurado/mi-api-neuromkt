@@ -14,6 +14,8 @@ namespace NeuromktApi.Services
         Task EliminarProyectoAsync(string codigo);
         Task<string> CrearProyectoAsync(ProyectoModel proyecto);
         Task<List<ProyectoResumenModel>> ListarProyectosResumenAsync();
+        Task<ProyectoModel> ObtenerProyectoAsync(string codigo);
+        Task ActualizarProyectoAsync(ProyectoModel proyecto);
     }
 
     public class EProyecto : IEProyecto
@@ -186,5 +188,80 @@ namespace NeuromktApi.Services
 
             return lista;
         }
+
+        public async Task<ProyectoModel> ObtenerProyectoAsync(string codigo)
+        {
+            const string sql = @"
+                SELECT codigo, nombre, proveedor, descripcion, creado_por
+                FROM neuromkt.proyectos
+                WHERE codigo = @p_codigo;
+            ";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen)
+                await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p_codigo", codigo);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if (!await reader.ReadAsync())
+                    throw new Exception($"Proyecto '{codigo}' no encontrado.");
+
+                return new ProyectoModel
+                {
+                    Codigo     = reader.GetString(0),
+                    Nombre     = reader.GetString(1),
+                    Proveedor  = reader.GetString(2),
+                    Descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    CreadoPor  = reader.GetString(4)
+                };
+            }
+            finally
+            {
+                if (!wasOpen)
+                    await conn.CloseAsync();
+            }
+        }
+
+        public async Task ActualizarProyectoAsync(ProyectoModel proyecto)
+        {
+            const string sql = @"
+                UPDATE neuromkt.proyectos
+                SET nombre     = @p_nombre,
+                    proveedor  = @p_proveedor,
+                    descripcion = @p_descripcion
+                WHERE codigo   = @p_codigo;
+            ";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen)
+                await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+
+                cmd.Parameters.AddWithValue("@p_codigo", proyecto.Codigo);
+                cmd.Parameters.AddWithValue("@p_nombre", proyecto.Nombre);
+                cmd.Parameters.AddWithValue("@p_proveedor", proyecto.Proveedor);
+                cmd.Parameters.AddWithValue("@p_descripcion",
+                    string.IsNullOrWhiteSpace(proyecto.Descripcion)
+                        ? (object)DBNull.Value
+                        : proyecto.Descripcion);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                if (!wasOpen)
+                    await conn.CloseAsync();
+            }
+        }
+
     }
 }

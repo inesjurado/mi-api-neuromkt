@@ -11,6 +11,8 @@ namespace NeuromktApi.Services
     public interface IEProyectoFragancia
     {
         Task<string> CrearProyectoFraganciaAsync(string proyectoCodigo, string fraganciaCodigo);
+        Task<List<ProyectoFraganciaModel>> ListarFraganciasPorProyectoAsync(string proyectoCodigo);
+        Task EliminarPorProyectoAsync(string proyectoCodigo);
     }
 
     public class EProyectoFragancia : IEProyectoFragancia
@@ -59,5 +61,67 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
+
+        public async Task<List<ProyectoFraganciaModel>> ListarFraganciasPorProyectoAsync(string proyectoCodigo)
+        {
+            const string sql = @"
+                SELECT codigo, fragancia_codigo
+                FROM neuromkt.f_proyecto_fragancias(@p_proyecto_codigo);
+            ";
+
+            var lista = new List<ProyectoFraganciaModel>();
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen)
+                await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ProyectoFraganciaModel
+                    {
+                        Codigo          = reader.GetString(0),
+                        FraganciaCodigo = reader.GetString(1),
+                        ProyectoCodigo  = proyectoCodigo
+                    });
+                }
+
+                return lista;
+            }
+            finally
+            {
+                if (!wasOpen)
+                    await conn.CloseAsync();
+            }
+        }
+
+        public async Task EliminarPorProyectoAsync(string proyectoCodigo)
+        {
+            const string sql = @"SELECT neuromkt.d_proyecto_fragancias(@p_proyecto_codigo);";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen)
+                await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                if (!wasOpen)
+                    await conn.CloseAsync();
+            }
+        }
+
     }
 }
