@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @using Npgsql
 @inject IExportService ExportService
+@inject UserSession UserSession
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -57,6 +58,7 @@
                         AllowPaging="false"
                         AllowFiltering="true"
                         FilterMode="FilterMode.Advanced"
+                        AllowSorting="true" 
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         Style="width:100%;">
             <Columns>
@@ -153,7 +155,13 @@
 
         try
         {
-            participantes = await EParticipante.ListarParticipantesAsync();
+            var emailActual = UserSession.Email;
+            if (string.IsNullOrWhiteSpace(emailActual))
+            {
+                mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
+                return;
+            }
+            participantes = await EParticipante.ListarParticipantesPorCreadorAsync(emailActual);
         }
         catch (Exception ex)
         {

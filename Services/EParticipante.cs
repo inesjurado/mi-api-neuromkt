@@ -7,13 +7,12 @@ using NeuromktApi.Models;
 using Npgsql;
 using NpgsqlTypes;
 
-
 namespace NeuromktApi.Services
 {
     public interface IEParticipante
     {
-        Task<List<ParticipanteModel>> ListarParticipantesAsync();
-        Task CrearParticipanteAsync(ParticipanteModel participante);
+        Task<List<ParticipanteModel>> ListarParticipantesPorCreadorAsync(string creadoPor);
+        Task<string> CrearParticipanteAsync(ParticipanteModel participante);   // 👈 CAMBIO
         Task ActualizarParticipanteAsync(string email, ParticipanteModel participante);
         Task EliminarParticipanteAsync(string email);
     }
@@ -30,14 +29,16 @@ namespace NeuromktApi.Services
         // ==========================
         // INSERTAR PARTICIPANTE
         // ==========================
-        public async Task CrearParticipanteAsync(ParticipanteModel participante)
+        public async Task<string> CrearParticipanteAsync(ParticipanteModel participante) // 👈 CAMBIO
         {
             const string sql = @"
                 SELECT neuromkt.i_participante(
-                    p_email            => :p_email,
-                    p_fecha_nacimiento => :p_fecha_nacimiento,
-                    p_genero           => :p_genero,
-                    p_notas            => :p_notas
+                    p_codigo            => :p_codigo,
+                    p_email             => :p_email,
+                    p_fecha_nacimiento  => :p_fecha_nacimiento,
+                    p_genero            => :p_genero,
+                    p_notas             => :p_notas,
+                    p_creado_por        => :p_creado_por
                 );
             ";
 
@@ -50,41 +51,39 @@ namespace NeuromktApi.Services
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                // email obligatorio
+                // que genere U<n>
+                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value);
+
                 if (string.IsNullOrWhiteSpace(participante.Email))
                     throw new Exception("El email del participante viene vacío al servicio.");
 
                 cmd.Parameters.AddWithValue("p_email", participante.Email.Trim().ToLower());
 
-                // fecha_nacimiento como DATE (no timestamp)
-                if (participante.FechaNacimiento.HasValue)
-                {
-                    cmd.Parameters.Add(
-                        "p_fecha_nacimiento",
-                        NpgsqlTypes.NpgsqlDbType.Date
-                    ).Value = participante.FechaNacimiento.Value.Date;
-                }
-                else
-                {
-                    cmd.Parameters.Add(
-                        "p_fecha_nacimiento",
-                        NpgsqlTypes.NpgsqlDbType.Date
-                    ).Value = DBNull.Value;
-                }
+                // fecha_nacimiento DATE
+                cmd.Parameters.Add("p_fecha_nacimiento", NpgsqlDbType.Date).Value =
+                    participante.FechaNacimiento.HasValue
+                        ? participante.FechaNacimiento.Value.Date
+                        : DBNull.Value;
 
                 // género opcional
-                if (string.IsNullOrWhiteSpace(participante.Genero))
-                    cmd.Parameters.AddWithValue("p_genero", DBNull.Value);
-                else
-                    cmd.Parameters.AddWithValue("p_genero", participante.Genero!.Trim());
+                cmd.Parameters.AddWithValue("p_genero",
+                    string.IsNullOrWhiteSpace(participante.Genero)
+                        ? (object)DBNull.Value
+                        : participante.Genero.Trim());
 
                 // notas opcional
-                if (string.IsNullOrWhiteSpace(participante.Notas))
-                    cmd.Parameters.AddWithValue("p_notas", DBNull.Value);
-                else
-                    cmd.Parameters.AddWithValue("p_notas", participante.Notas!.Trim());
+                cmd.Parameters.AddWithValue("p_notas",
+                    string.IsNullOrWhiteSpace(participante.Notas)
+                        ? (object)DBNull.Value
+                        : participante.Notas.Trim());
 
-                await cmd.ExecuteNonQueryAsync();
+                // creado_por obligatorio
+                if (string.IsNullOrWhiteSpace(participante.CreadoPor))
+                    throw new Exception("Falta CreadoPor (usuario logeado) para crear el participante.");
+
+                cmd.Parameters.AddWithValue("p_creado_por", participante.CreadoPor.Trim().ToLower());
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToString(result) ?? string.Empty;
             }
             catch (PostgresException ex)
             {
@@ -98,11 +97,10 @@ namespace NeuromktApi.Services
             }
         }
 
-
         // ==========================
-        // LISTAR PARTICIPANTES
+        // LISTAR POR CREADOR
         // ==========================
-        public async Task<List<ParticipanteModel>> ListarParticipantesAsync()
+        public async Task<List<ParticipanteModel>> ListarParticipantesPorCreadorAsync(string creadoPor)
         {
             var lista = new List<ParticipanteModel>();
 
@@ -115,24 +113,26 @@ namespace NeuromktApi.Services
             {
                 await using var cmd = conn.CreateCommand();
                 cmd.CommandText = @"
-                    SELECT email, fecha_nacimiento, genero, notas
-                    FROM neuromkt.participantes
+                    SELECT codigo, email, fecha_nacimiento, genero, notas, creado_por
+                    FROM neuromkt.l_participantes_por_creador(@p_creado_por)
                     ORDER BY email;";
+
+                cmd.Parameters.AddWithValue("@p_creado_por", creadoPor.Trim().ToLower());
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    var p = new ParticipanteModel
+                    lista.Add(new ParticipanteModel
                     {
+                        Codigo = reader["codigo"] as string ?? string.Empty,
                         Email = reader["email"] as string ?? string.Empty,
                         FechaNacimiento = reader["fecha_nacimiento"] is DBNull
                             ? (DateTime?)null
                             : Convert.ToDateTime(reader["fecha_nacimiento"]),
                         Genero = reader["genero"] as string,
-                        Notas = reader["notas"] as string
-                    };
-
-                    lista.Add(p);
+                        Notas = reader["notas"] as string,
+                        CreadoPor = reader["creado_por"] as string
+                    });
                 }
             }
             catch (PostgresException ex)
@@ -162,33 +162,24 @@ namespace NeuromktApi.Services
                     @p_notas
                 );";
 
-            var pEmail = new NpgsqlParameter("@p_email", email?.Trim().ToLower() ?? string.Empty);
+            var pEmail = new NpgsqlParameter("@p_email", (email ?? string.Empty).Trim().ToLower());
 
-            // Siguiendo tu función:
-            // - NULL  -> no se toca ese campo
-            // - ''    -> en genero/notas se convierte a NULL con nullif(...)
-            object fechaParam = participante.FechaNacimiento.HasValue
-                ? participante.FechaNacimiento.Value
-                : (object)DBNull.Value;
-
-            var pFechaNacimiento = new NpgsqlParameter("@p_fecha_nacimiento", NpgsqlDbType.Date);
-            if (participante.FechaNacimiento.HasValue)
-                pFechaNacimiento.Value = participante.FechaNacimiento.Value.Date;
-            else
-                pFechaNacimiento.Value = DBNull.Value;
-
+            var pFechaNacimiento = new NpgsqlParameter("@p_fecha_nacimiento", NpgsqlDbType.Date)
+            {
+                Value = participante.FechaNacimiento.HasValue
+                    ? participante.FechaNacimiento.Value.Date
+                    : DBNull.Value
+            };
 
             var pGenero = new NpgsqlParameter("@p_genero",
-                (object?)participante.Genero ?? DBNull.Value);
+                string.IsNullOrWhiteSpace(participante.Genero) ? (object)DBNull.Value : participante.Genero.Trim());
 
             var pNotas = new NpgsqlParameter("@p_notas",
-                (object?)participante.Notas ?? DBNull.Value);
-
-            var parametros = new[] { pEmail, pFechaNacimiento, pGenero, pNotas };
+                string.IsNullOrWhiteSpace(participante.Notas) ? (object)DBNull.Value : participante.Notas.Trim());
 
             try
             {
-                await _db.Database.ExecuteSqlRawAsync(sql, parametros);
+                await _db.Database.ExecuteSqlRawAsync(sql, pEmail, pFechaNacimiento, pGenero, pNotas);
             }
             catch (PostgresException ex)
             {
@@ -204,7 +195,7 @@ namespace NeuromktApi.Services
         {
             const string sql = @"SELECT neuromkt.d_participante(@p_email);";
 
-            var param = new NpgsqlParameter("@p_email", email?.Trim().ToLower() ?? string.Empty);
+            var param = new NpgsqlParameter("@p_email", (email ?? string.Empty).Trim().ToLower());
 
             try
             {

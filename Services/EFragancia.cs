@@ -28,49 +28,46 @@ namespace NeuromktApi.Services
         // ======================
         // INSERTAR FRAGANCIA
         // ======================
-        public async Task<string> CrearFraganciaAsync(FraganciaModel fragancia)
+        public async Task<string> CrearFraganciaAsync(FraganciaModel f)
         {
-            // Asumo que tu función se llama neuromkt.i_fragancia(...)
             const string sql = @"
                 SELECT neuromkt.i_fragancia(
+                    @p_codigo,
                     @p_nombre,
                     @p_proveedor,
-                    @p_descripcion
-                );";
+                    @p_descripcion,
+                    @p_creado_por
+                );
+            ";
 
-            var pCodigo = new NpgsqlParameter("@p_codigo",
-                string.IsNullOrWhiteSpace(fragancia.Codigo)
-                    ? (object)DBNull.Value
-                    : fragancia.Codigo.Trim());
-
-            var pNombre = new NpgsqlParameter("@p_nombre", fragancia.Nombre?.Trim() ?? string.Empty);
-
-            var pProveedor = new NpgsqlParameter("@p_proveedor",
-                string.IsNullOrWhiteSpace(fragancia.Proveedor)
-                    ? (object)DBNull.Value
-                    : fragancia.Proveedor!.Trim());
-
-            var pDescripcion = new NpgsqlParameter("@p_descripcion",
-                string.IsNullOrWhiteSpace(fragancia.Descripcion)
-                    ? (object)DBNull.Value
-                    : fragancia.Descripcion!.Trim());
-
-            var parametros = new[] { pCodigo, pNombre, pProveedor, pDescripcion };
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
 
             try
             {
-                // La función devuelve el código generado
-                var result = await _db.Database.ExecuteSqlRawAsync(sql, parametros);
-                // Si quieres leer el código devuelto habría que usar FromSqlRaw/ExecuteScalar,
-                // pero como la función ya genera el código y lanza excepciones, normalmente basta.
-                return fragancia.Codigo; // o devolver el que te venga de la función si lo necesitas
+                await using var cmd = new NpgsqlCommand(sql, conn);
+
+                cmd.Parameters.AddWithValue("@p_codigo",
+                    string.IsNullOrWhiteSpace(f.Codigo) ? (object)DBNull.Value : f.Codigo.Trim());
+
+                cmd.Parameters.AddWithValue("@p_nombre", f.Nombre);
+                cmd.Parameters.AddWithValue("@p_proveedor", f.Proveedor ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@p_descripcion",
+                    string.IsNullOrWhiteSpace(f.Descripcion) ? (object)DBNull.Value : f.Descripcion.Trim());
+
+                cmd.Parameters.AddWithValue("@p_creado_por", f.CreadoPor); // 👈 nuevo campo
+
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToString(result) ?? string.Empty;
             }
-            catch (PostgresException ex)
+            finally
             {
-                Console.WriteLine($"[Postgres] {ex.MessageText}");
-                throw;
+                if (!wasOpen)
+                    await conn.CloseAsync();
             }
         }
+
 
         // ======================
         // LISTAR FRAGANCIAS

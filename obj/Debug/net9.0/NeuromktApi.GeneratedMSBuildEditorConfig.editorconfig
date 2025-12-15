@@ -36,10 +36,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Db25maWd1cmFjaW9uLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminInicio.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5JbmljaW8ucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminProyectos.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Qcm95ZWN0b3MucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -82,6 +78,18 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PalabraForm.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUGFsYWJyYUZvcm0ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaColor.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhQ29sb3IucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaIntro.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhSW50cm8ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaPalabra.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhUGFsYWJyYS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/inesjuradorichards/Documents/NeuromktApi/Pages/UsuarioForm.razor]

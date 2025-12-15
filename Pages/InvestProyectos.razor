@@ -1,11 +1,11 @@
 @page "/investProyecto"
 @using NeuromktApi.Models
 @using NeuromktApi.Services
-@inject IEProyecto EProyecto
-@inject IJSRuntime JS
-@inject IEUsuario EUsuario
-@inject IEPrueba EPrueba
 @using Npgsql
+@inject UserSession UserSession
+@inject IEProyecto EProyecto
+@inject IEPrueba EPrueba
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject IExportService ExportService
 
@@ -30,10 +30,10 @@
                           Click="@NuevoProyecto" />
 
             <RadzenButton Icon="file_download"
-                        Text="Descargar Proyectos"
-                        ButtonStyle="ButtonStyle.Secondary"
-                        Disabled="@(!proyectos.Any())"
-                        Click="@DescargarProyectos" />
+                          Text="Descargar Proyectos"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Disabled="@(!proyectos.Any())"
+                          Click="@DescargarProyectos" />
         </div>
 
         @if (!string.IsNullOrEmpty(mensajeOk))
@@ -52,35 +52,36 @@
             </RadzenAlert>
         }
 
-        <RadzenDataGrid TItem="ProyectoResumenModel"
+        <RadzenDataGrid TItem="ProyectoModel"
                         Data="@proyectos"
                         RowHover="true"
                         AllowPaging="true"
                         PageSize="10"
                         ShowPagingSummary="true"
+                        AllowSorting="true"
                         AllowFiltering="true"
                         FilterMode="FilterMode.Advanced"
                         Style="width:100%;">
             <Columns>
-                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                       Property="Codigo"
                                       Title="Código"
                                       Width="120px"
                                       Filterable="true" />
 
-                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                       Property="Nombre"
                                       Title="Proyecto"
                                       Filterable="true"
                                       FilterOperator="FilterOperator.Contains" />
 
-                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                       Property="NumParticipantes"
                                       Title="Participantes"
                                       Width="140px"
                                       Filterable="false" />
 
-                <RadzenDataGridColumn TItem="ProyectoResumenModel"
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                       Title="Acciones"
                                       Width="200px"
                                       Filterable="false">
@@ -90,12 +91,12 @@
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => VerProyecto(p))" />
-                            
+
                         <RadzenButton Icon="play_arrow"
-                                        Size="ButtonSize.Small"
-                                        ButtonStyle="ButtonStyle.Light"
-                                        Style="margin-right:0.5rem;"
-                                        Click="@(() => AbrirDialogoEmpezar(p))" />
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-right:0.5rem;"
+                                      Click="@(() => AbrirDialogoEmpezar(p))" />
 
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
@@ -132,7 +133,6 @@
             <div class="nf-dialog-form">
                 <div class="nf-form-field">
                     <label>Participante</label>
-
                     <RadzenDropDown Data="@pruebasProyecto"
                                     TextProperty="ParticipanteEmail"
                                     ValueProperty="Codigo"
@@ -164,17 +164,17 @@
     </div>
 }
 
-
 @code {
-    private List<ProyectoResumenModel> proyectos = new();
+    private List<ProyectoModel> proyectos = new();
     private bool busy = false;
     private string? mensajeOk;
     private string? mensajeError;
 
+    // Modal empezar
     private bool empezarDialogVisible = false;
-    private ProyectoResumenModel? proyectoSeleccionado;
+    private ProyectoModel? proyectoSeleccionado;
     private List<PruebaModel> pruebasProyecto = new();
-    private string? pruebaSeleccionadaCodigo;
+    private string? pruebaSeleccionadaCodigo; // aquí guardo PRB<n>
     private string? dialogError;
     private bool empezarBusy = false;
 
@@ -191,7 +191,13 @@
         try
         {
             mensajeError = null;
-            proyectos = await EProyecto.ListarProyectosResumenAsync();
+            var emailActual = UserSession.Email;
+            if (string.IsNullOrWhiteSpace(emailActual))
+            {
+                mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
+                return;
+            }
+            proyectos = await EProyecto.ListarProyectosPorCreadorAsync(emailActual);
         }
         catch (Exception ex)
         {
@@ -201,17 +207,15 @@
 
     private void NuevoProyecto()
     {
-        // Ajusta la ruta a la que lleve tu formulario de alta
         Nav.NavigateTo("/nuevoProyecto");
     }
 
-    private void VerProyecto(ProyectoResumenModel p)
+    private void VerProyecto(ProyectoModel p)
     {
-        // Vista detalle/edición del proyecto
         Nav.NavigateTo($"/nuevoProyecto/{p.Codigo}");
     }
 
-    private async Task BorrarProyecto(ProyectoResumenModel p)
+    private async Task BorrarProyecto(ProyectoModel p)
     {
         if (busy) return;
 
@@ -244,7 +248,7 @@
         }
     }
 
-    private async Task AbrirDialogoEmpezar(ProyectoResumenModel p)
+    private async Task AbrirDialogoEmpezar(ProyectoModel p)
     {
         if (busy) return;
 
@@ -255,7 +259,8 @@
 
         try
         {
-            // Cargamos las pruebas (participantes) de ese proyecto
+            // ✅ Esto debe devolver ParticipanteEmail (para mostrar)
+            //    y ParticipanteCodigo (para navegar)
             pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(p.Codigo);
             empezarDialogVisible = true;
         }
@@ -272,35 +277,56 @@
         pruebasProyecto = new();
         pruebaSeleccionadaCodigo = null;
         dialogError = null;
+        empezarBusy = false;
     }
 
     private async Task ConfirmarEmpezarPrueba()
     {
-        if (string.IsNullOrEmpty(pruebaSeleccionadaCodigo))
+        dialogError = null;
+
+        if (string.IsNullOrWhiteSpace(pruebaSeleccionadaCodigo))
+        {
+            dialogError = "Selecciona un participante.";
             return;
+        }
+
+        if (proyectoSeleccionado == null)
+        {
+            dialogError = "No se ha podido obtener el proyecto.";
+            return;
+        }
+
+        var prueba = pruebasProyecto
+            .FirstOrDefault(x => x.Codigo == pruebaSeleccionadaCodigo);
+
+        if (prueba == null)
+        {
+            dialogError = "No se ha encontrado la prueba seleccionada.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(prueba.ParticipanteCodigo))
+        {
+            dialogError = "La prueba no tiene participante asociado (código vacío).";
+            return;
+        }
 
         empezarBusy = true;
-        dialogError = null;
 
         try
         {
-            // Actualiza fecha_prueba con NOW() en la BD
-            await EPrueba.ActualizarFechaPruebaAsync(pruebaSeleccionadaCodigo);
+            await EPrueba.ActualizarFechaPruebaAsync(prueba.Codigo);
 
-            empezarDialogVisible = false;
-            mensajeOk = "Prueba iniciada correctamente para el participante seleccionado.";
-            mensajeError = null;
+            var participanteEncoded = Uri.EscapeDataString(prueba.ParticipanteCodigo);
+            var pruebaEncoded = Uri.EscapeDataString(prueba.Codigo);
 
-            // Si quieres abrir directamente la vista de prueba, pon aquí el NavigateTo:
-            // Nav.NavigateTo($"/investigador/prueba/{pruebaSeleccionadaCodigo}");
-        }
-        catch (PostgresException ex)
-        {
-            dialogError = ex.MessageText;
+            Nav.NavigateTo(
+                $"/prueba/{proyectoSeleccionado.Codigo}/{participanteEncoded}?pruebaCodigo={pruebaEncoded}"
+            );
         }
         catch (Exception ex)
         {
-            dialogError = "Error al iniciar la prueba: " + ex.Message;
+            dialogError = "Error al empezar la prueba: " + ex.Message;
         }
         finally
         {

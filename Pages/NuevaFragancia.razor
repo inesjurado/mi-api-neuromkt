@@ -1,6 +1,7 @@
 @using NeuromktApi.Models
 @using NeuromktApi.Services
 @inject IEFragancia EFragancia
+@inject UserSession UserSession
 
 @using Microsoft.AspNetCore.Components
 @using Npgsql
@@ -111,7 +112,8 @@
                 Codigo      = Fragancia.Codigo,
                 Nombre      = Fragancia.Nombre,
                 Proveedor   = Fragancia.Proveedor,
-                Descripcion = Fragancia.Descripcion
+                Descripcion = Fragancia.Descripcion,
+                CreadoPor   = Fragancia.CreadoPor   // por si quieres mostrarlo en algún sitio
             };
             CodigoOriginal = Fragancia.Codigo;
         }
@@ -153,16 +155,27 @@
 
         try
         {
+            // ===== obtener usuario actual (igual que en proyectos) =====
+            var emailActual = UserSession.Email;
+            if (string.IsNullOrWhiteSpace(emailActual))
+            {
+                MensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
+                Busy = false;
+                return;
+            }
+
             string codigo;
 
             if (!EsEdicion)
             {
-                // ALTA
+                // ALTA → asignamos CreadoPor automáticamente
+                modelo.CreadoPor = emailActual.Trim();
+
                 codigo = await EFragancia.CrearFraganciaAsync(modelo);
             }
             else
             {
-                // EDICIÓN
+                // EDICIÓN → normalmente no cambiamos CreadoPor
                 var clave = CodigoOriginal ?? modelo.Codigo;
                 await EFragancia.ActualizarFraganciaAsync(clave, modelo);
                 codigo = clave;

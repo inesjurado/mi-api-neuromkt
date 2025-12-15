@@ -8,13 +8,16 @@
 
 <div class="login-page">
     <div class="login-logo-upv">
-        UPV
+        <img src="images/upv.png"
+            alt="UPV"
+            class="login-logo-img" />
     </div>
 
     <div class="login-logo-macom">
-        MACOM
+        <img src="images/macom.png"
+            alt="MACOM"
+            class="login-logo-img" />
     </div>
-
     <RadzenCard Class="login-card">
         <div class="login-header">
             <h1>Neurofragancias</h1>
@@ -26,9 +29,39 @@
                            Placeholder="Email"
                            Style="width:100%; margin-bottom: 1rem;" />
 
-            <RadzenPassword @bind-Value="Password"
+            <div class="password-wrapper">
+                <RadzenTextBox @bind-Value="Password"
                             Placeholder="Contraseña"
-                            Style="width:100%; margin-bottom: 1.5rem;" />
+                            Name="Password"
+                            Style="width:100%; padding-right:3rem;"
+                            type="@(_mostrarPassword ? "text" : "password")" />
+
+                <button type="button"
+                        class="password-toggle-pill"
+                        @onclick="TogglePassword"
+                        aria-label="Mostrar u ocultar contraseña">
+                    @if (_mostrarPassword)
+                    {
+                        <!-- OJO TACHADO -->
+                        <svg viewBox="0 0 24 24" class="eye-icon">
+                            <path d="M3 12c2.5-4 5.5-6 9-6 1.2 0 2.3.2 3.3.6" />
+                            <path d="M21 12c-2.5 4-5.5 6-9 6-1.3 0-2.5-.3-3.6-.7" />
+                            <circle cx="12" cy="12" r="2.5" />
+                            <line x1="4" y1="4" x2="20" y2="20" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <!-- OJO NORMAL -->
+                        <svg viewBox="0 0 24 24" class="eye-icon">
+                            <path d="M3 12c2.5-4 5.5-6 9-6s6.5 2 9 6c-2.5 4-5.5 6-9 6s-6.5-2-9-6z" />
+                            <circle cx="12" cy="12" r="2.5" />
+                        </svg>
+                    }
+                </button>
+            </div>
+
+
 
             <RadzenButton Text="Iniciar sesión"
                           ButtonStyle="ButtonStyle.Primary"
@@ -76,16 +109,19 @@
         // Redirigimos según el rol devuelto por la función
         if (rol == "Administrador")
         {
-            NavigationManager.NavigateTo("/adminInicio");
+            NavigationManager.NavigateTo("/proyectos");
         }
         else if (rol == "Investigador")
         {
-            NavigationManager.NavigateTo("/adminInicio");
-        }
-        else
-        {
-            // Por si en el futuro hay otros roles
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateTo("/investProyecto");
         }
     }
+
+    bool _mostrarPassword = false;
+
+    void TogglePassword()
+    {
+        _mostrarPassword = !_mostrarPassword;
+    }
+
 }

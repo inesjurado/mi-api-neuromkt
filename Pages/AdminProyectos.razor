@@ -56,6 +56,7 @@
                         RowHover="true"
                         AllowPaging="false"
                         AllowFiltering="true"
+                        AllowSorting="true" 
                         FilterMode="FilterMode.Advanced"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         Style="width:100%;">
@@ -67,6 +68,19 @@
                                     FilterOperator="FilterOperator.Contains" />
 
                 <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="CreadoPor"
+                                    Title="Creado por"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                      Property="NumParticipantes"
+                      Title="Nº Participantes"
+                      Width="140px"
+                      TextAlign="TextAlign.Center"
+                      Filterable="false" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                     Property="Proveedor"
                                     Title="Proveedor"
                                     Filterable="true"
@@ -75,12 +89,6 @@
                 <RadzenDataGridColumn TItem="ProyectoModel"
                                     Property="Descripcion"
                                     Title="Descripción"
-                                    Filterable="true"
-                                    FilterOperator="FilterOperator.Contains" />
-
-                <RadzenDataGridColumn TItem="ProyectoModel"
-                                    Property="CreadoPor"
-                                    Title="Creado por"
                                     Filterable="true"
                                     FilterOperator="FilterOperator.Contains" />
 

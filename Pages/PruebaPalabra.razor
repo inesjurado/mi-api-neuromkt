@@ -1,0 +1,162 @@
+@page "/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/palabra"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEProyectoPalabra EProyectoPalabra
+@inject IEResultado EResultado
+@inject NavigationManager Nav
+
+<div class="test-page">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                SELECCION DE PALABRA
+            </div>
+        </RadzenCard>
+    </div>
+
+    <!-- Contenedor principal (mismo que en colores) -->
+    <div class="nf-test-row">
+
+        @if (!resumenVisible)
+        {
+            <!-- PASO 2: ELECCIÓN DE PALABRA -->
+            <RadzenCard Class="nf-table-card nf-test-main">
+                <div class="nf-test-main-inner">
+                    <h2>¿Con qué palabra asocias la fragancia?</h2>
+
+                    <!-- ✅ Quitado: no mostramos participante -->
+
+                    <!-- GRID DE PALABRAS -->
+                    <div class="test-word-grid">
+                        @foreach (var item in palabrasProyecto)
+                        {
+                            var seleccionado = item.Palabra == palabraSeleccionada;
+                            <button class="test-word-pill @(seleccionado ? "seleccionado" : "")"
+                                    @onclick="@(() => SeleccionarPalabra(item.Palabra))">
+                                @item.Palabra
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="test-footer-buttons">
+                        <RadzenButton Text="Atrás"
+                                      Icon="skip_previous"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="@IrAtras" />
+
+                        <RadzenButton Text="Finalizar"
+                                      Icon="check"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Disabled="@string.IsNullOrEmpty(palabraSeleccionada)"
+                                      Click="@Finalizar" />
+                    </div>
+                </div>
+            </RadzenCard>
+        }
+        else
+        {
+            <!-- PASO 3: RESUMEN -->
+            <RadzenCard Class="nf-table-card nf-test-main">
+                <div class="nf-test-main-inner">
+                    <h2>¡Gracias por tu participación!</h2>
+
+                    <p>Tus respuestas han sido registradas con éxito.</p>
+
+                    <div style="margin-top:1.5rem; line-height:1.8;">
+                        <strong>Resumen:</strong><br />
+                        Color elegido:
+                        <span style="display:inline-flex; align-items:center; gap:0.5rem;">
+                            <span style="
+                                width:28px;
+                                height:28px;
+                                border-radius:50%;
+                                box-shadow:0 2px 6px rgba(0,0,0,0.15);
+                                background-color:@resumenColorHex;">
+                            </span>
+                            <span>@resumenColorHex</span>
+                        </span>
+                        <br />
+                        Palabra elegida: <strong>@resumenPalabra</strong>
+                    </div>
+
+                    <div class="nf-form-actions" style="margin-top:1.75rem;">
+                        <RadzenButton Text="Salir"
+                                      Icon="exit_to_app"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Click="@Salir" />
+                    </div>
+                </div>
+            </RadzenCard>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ProyectoCodigo { get; set; } = default!;
+    [Parameter] public string ParticipanteCodigo { get; set; } = default!;
+
+    // vienen por query ?pruebaCodigo=&colorHex=
+    [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
+    public string? PruebaCodigo { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "colorHex")]
+    public string? ColorHexSeleccionado { get; set; }
+
+    private List<ProyectoPalabraModel> palabrasProyecto = new();
+    private string? palabraSeleccionada;
+
+    // estado resumen
+    private bool resumenVisible = false;
+    private string? resumenColorHex;
+    private string? resumenPalabra;
+
+    protected override async Task OnInitializedAsync()
+    {
+        palabrasProyecto = await EProyectoPalabra.ListarPalabrasPorProyectoAsync(ProyectoCodigo);
+    }
+
+    private void SeleccionarPalabra(string palabra)
+    {
+        palabraSeleccionada = palabra;
+    }
+
+    private void IrAtras()
+    {
+        var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo ?? string.Empty);
+        var colorEncoded  = Uri.EscapeDataString(ColorHexSeleccionado ?? string.Empty);
+
+        Nav.NavigateTo(
+            $"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/seleccion?pruebaCodigo={pruebaEncoded}&colorHex={colorEncoded}"
+        );
+    }
+
+    private async Task Finalizar()
+    {
+        if (string.IsNullOrEmpty(PruebaCodigo) ||
+            string.IsNullOrEmpty(ColorHexSeleccionado) ||
+            string.IsNullOrEmpty(palabraSeleccionada))
+        {
+            return;
+        }
+
+        await EResultado.CrearResultadoAsync(
+            PruebaCodigo!,
+            ColorHexSeleccionado!,
+            palabraSeleccionada!
+        );
+
+        resumenColorHex = ColorHexSeleccionado;
+        resumenPalabra  = palabraSeleccionada;
+        resumenVisible  = true;
+    }
+
+    private void Salir()
+    {
+        Nav.NavigateTo("/investProyecto");
+    }
+}

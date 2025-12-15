@@ -67,19 +67,80 @@ body {
     text-decoration: none;
 }
 
+.login-logo-img {
+    height: 70px;
+    /* ajusta a tu gusto */
+    width: auto;
+    object-fit: contain;
+}
+
+/* Posiciones ya las tenías bien */
 .login-logo-upv {
     position: absolute;
     top: 1rem;
     right: 1.5rem;
-    font-weight: bold;
 }
 
 .login-logo-macom {
     position: absolute;
     bottom: 1rem;
     left: 1.5rem;
-    font-weight: bold;
 }
+
+
+/* Contenedor del input + botón del ojo */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+/* Radzen genera un <input class="rz-inputtext"> dentro de la caja */
+.password-wrapper input.rz-inputtext {
+    border-radius: 999px;
+    /* forma pastilla */
+    padding-left: 1.1rem;
+    padding-right: 3rem;
+    /* hueco para el icono */
+    box-shadow: none;
+}
+
+/* Botón del ojo, dentro del campo */
+.password-toggle-pill {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: none;
+    background: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.password-toggle-pill:focus {
+    outline: none;
+}
+
+/* Icono de ojo */
+.password-toggle-pill .eye-icon {
+    width: 18px;
+    height: 18px;
+    stroke: #555;
+    stroke-width: 1.7;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+
+
 
 /* ======================= */
 /*      LAYOUT GENERAL     */
@@ -472,5 +533,285 @@ button.rz-button.rz-light:hover:not(:disabled) {
     font-size: 0.8rem;
     color: #666;
 }
+
+
+/* =============================== */
+/* CONTENIDO PRUEBA                */
+/* =============================== */
+/* contenido principal */
+.test-content {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.test-welcome-card {
+    max-width: 650px;
+    width: 100%;
+    padding: 2rem 2.5rem;
+    border-radius: 1.8rem;
+    background: #f2ecf7;
+}
+
+.test-welcome-body h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.test-welcome-body p {
+    margin: 0.2rem 0;
+}
+
+.test-participant {
+    margin-top: 1.4rem;
+    font-size: 1.50rem;
+}
+
+.test-actions {
+    margin-top: 1.8rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
+/* Tarjeta principal (bienvenida) */
+.nf-test-main {
+    flex: 2;
+}
+
+/* ⬇️ centrar el contenido dentro de la tarjeta */
+.nf-test-main-inner {
+    padding: 1.5rem 2rem;
+    max-width: 650px;
+    /* ancho máximo del bloque de texto */
+    margin: 0 auto;
+    /* lo centra horizontalmente dentro de la card */
+}
+
+/* Título de la tarjeta de bienvenida */
+.nf-test-main-inner h2 {
+    font-size: 2rem;
+    /* antes era ~1.5–1.6rem; súbelo o bájalo a tu gusto */
+}
+
+/* Párrafos de la tarjeta de bienvenida */
+.nf-test-main-inner p {
+    font-size: 1rem;
+    /* 1rem = 16px aprox. Prueba 1.05rem o 1.1rem si quieres más grande */
+}
+
+
+/* ===== Layout general prueba (mismo que en el mock azul) ===== */
+
+.test-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem 3rem;
+    background: #dfe5f1;
+    box-sizing: border-box;
+}
+
+/* Cabecera: título + investigador */
+.test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.test-title-card {
+    flex: 1;
+    max-width: 600px;
+    text-align: center;
+    padding: 1rem 1.5rem;
+    border-radius: 999px;
+    background: #e8edf8;
+    font-weight: 500;
+}
+
+.test-invest-card {
+    min-width: 240px;
+    margin-left: 2rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 1rem;
+    background: #f5e9f4;
+}
+
+.test-invest-name {
+    font-weight: 600;
+}
+
+.test-invest-role {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Tarjeta principal */
+.test-main-card {
+    margin: 0 auto;
+    margin-top: 1rem;
+    max-width: 720px;
+    background: #f2ecf7;
+    border-radius: 1.8rem;
+    padding: 1.75rem 2.5rem 2.25rem;
+}
+
+.test-main-header h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.6rem;
+}
+
+.test-main-header p {
+    margin: 0.25rem 0;
+}
+
+.test-participant {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+}
+
+
+/* =============================== */
+/* PRUEBA  COLORES                 */
+/* =============================== */
+/* GRID de colores */
+.test-color-grid {
+    margin-top: 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem 2rem;
+    justify-items: center;
+}
+
+.test-color-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border 0.15s ease;
+}
+
+.test-color-circle:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.test-color-circle.seleccionado {
+    box-shadow: 0 0 0 4px white, 0 0 0 6px #1f3c88;
+}
+
+/* Botones de abajo */
+.test-footer-buttons {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Responsive básico */
+@media (max-width: 900px) {
+    .test-page {
+        padding: 1.5rem;
+    }
+
+    .test-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .test-title-card {
+        max-width: none;
+    }
+
+    .test-invest-card {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+
+    .test-color-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .test-color-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .test-color-circle {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+.test-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem 3rem;
+    background: #ffffff;
+    /* o simplemente elimina esta línea */
+    box-sizing: border-box;
+}
+
+
+
+
+/* ===== GRID de palabras (similar al grid de colores) ===== */
+
+.test-word-grid {
+    margin-top: 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 1.2rem 1.8rem;
+    justify-items: center;
+}
+
+/* Botón tipo “pastilla” */
+.test-word-pill {
+    min-width: 130px;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    border: none;
+    background: #6c7bbd;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.test-word-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    background: #5b6ab0;
+}
+
+.test-word-pill.seleccionado {
+    background: #38479b;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px #38479b;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .test-word-grid {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .test-word-grid {
+        grid-template-columns: repeat(1, minmax(140px, 1fr));
+        justify-items: stretch;
+    }
+
+    .test-word-pill {
+        width: 100%;
+    }
+}
+
+
 
 /* Icono cerrar modal ya está arriba con nf-modal-close */

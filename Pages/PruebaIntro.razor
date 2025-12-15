@@ -1,0 +1,60 @@
+@page "/prueba/{ProyectoCodigo}/{ParticipanteCodigo}"
+
+@using NeuromktApi.Services
+@inject NavigationManager Nav
+@inject UserSession UserSession
+
+<RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
+
+    <!-- Cabecera -->
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                INSTRUCCIONES DE LA PRUEBA
+            </div>
+        </RadzenCard>
+    </div>
+
+    <!-- Contenido -->
+    <div class="nf-test-row">
+
+        <!-- Tarjeta principal con el texto de bienvenida -->
+        <RadzenCard Class="nf-table-card nf-test-main">
+            <div class="nf-test-main-inner">
+                <h2>Bienvenido</h2>
+
+                <p>Vas a oler una fragancia.</p>
+                <p>Tómate 10 segundos para percibirla.</p>
+                <p>Después, selecciona el color y la palabra que mejor la representen.</p>
+
+                <!-- ✅ Quitado: no mostramos el email/código del participante -->
+
+                <div class="nf-form-actions" style="margin-top:1.5rem;">
+                    <RadzenButton Text="Siguiente"
+                                  Icon="play_arrow"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="@IrASiguiente" />
+                </div>
+            </div>
+        </RadzenCard>
+
+    </div>
+
+</RadzenCard>
+
+@code {
+    [Parameter] public string ProyectoCodigo { get; set; } = default!;
+    [Parameter] public string ParticipanteCodigo { get; set; } = default!;
+
+    [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
+    public string? PruebaCodigo { get; set; }
+
+    private void IrASiguiente()
+    {
+        var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo ?? string.Empty);
+
+        Nav.NavigateTo(
+            $"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/seleccion?pruebaCodigo={pruebaEncoded}"
+        );
+    }
+}

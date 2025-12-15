@@ -144,12 +144,12 @@
                 <label class="nf-label">Participantes:</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <RadzenDropDown Data="@participantes"
-                                    TextProperty="Email"     
-                                    ValueProperty="Email"    
-                                    @bind-Value="seleccionParticipantes"
-                                    Multiple="true"
-                                    Style="width:100%;"
-                                    Placeholder="Selecciona los participantes que harán la prueba" />
+                                TextProperty="Email"
+                                ValueProperty="Codigo"
+                                Multiple="true"
+                                @bind-Value="seleccionParticipantes"
+                                Style="width:100%;" 
+                                Placeholder="Selecciona los participantes que harán la prueba" />
 
                     <RadzenButton Icon="add_circle"
                                   Text="Añadir"
@@ -166,11 +166,6 @@
             </div>
 
             <div class="nf-form-actions" style="margin-top:1.5rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
-
-                <RadzenButton Text="EMPEZAR"
-                              ButtonStyle="ButtonStyle.Primary"
-                              Disabled="@busy"
-                              Click="@(() => GuardarProyecto(true))" />
 
                 <RadzenButton Text="Guardar"
                               Icon="save"
@@ -279,7 +274,7 @@
             // 5) Participantes del proyecto (pruebas)
             var pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(CodigoProyecto!);
             seleccionParticipantes = pruebasProyecto
-                .Select(pr => pr.ParticipanteEmail)
+                .Select(pr => pr.ParticipanteCodigo)
                 .ToList();
         }
         catch (Exception ex)
@@ -292,10 +287,11 @@
     {
         try
         {
+            var emailActual = UserSession.Email;
             palabras      = await EPalabra.ListarPalabrasAsync();
             colores       = await EColor.ListarColoresAsync();
             fragancias    = await EFragancia.ListarFraganciasAsync();
-            participantes = await EParticipante.ListarParticipantesAsync();
+            participantes = await EParticipante.ListarParticipantesPorCreadorAsync(UserSession.Email!);
         }
         catch (Exception ex)
         {
@@ -339,15 +335,17 @@
         mensajeOk = $"Fragancia \"{nueva?.Nombre ?? codigo}\" creada correctamente.";
     }
 
-    private async Task OnParticipanteCreado(string email)
+    private async Task OnParticipanteCreado(string codigoParticipante)
     {
         await CargarCombosAsync();
 
-        if (!seleccionParticipantes.Contains(email))
-            seleccionParticipantes.Add(email);
+        if (!seleccionParticipantes.Contains(codigoParticipante))
+            seleccionParticipantes.Add(codigoParticipante);
 
-        mensajeOk = $"Participante \"{email}\" creado correctamente.";
+        var p = participantes.FirstOrDefault(x => x.Codigo == codigoParticipante);
+        mensajeOk = $"Participante \"{p?.Email ?? codigoParticipante}\" creado correctamente.";
     }
+
 
     private async Task OnColorCreado(string hex)
     {
@@ -451,9 +449,9 @@
             // PARTICIPANTES → PRUEBAS
             if (seleccionParticipantes?.Count > 0)
             {
-                foreach (var emailParticipante in seleccionParticipantes)
+                foreach (var participanteCodigo in seleccionParticipantes)
                 {
-                    await EPrueba.CrearPruebaAsync(codigoProyecto, emailParticipante);
+                    await EPrueba.CrearPruebaAsync(codigoProyecto, participanteCodigo); // 👈 ahora es codigo
                 }
             }
 

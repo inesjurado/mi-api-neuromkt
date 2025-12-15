@@ -42,8 +42,9 @@ namespace NeuromktApi.Services
                 {
                     var c = new ColorModel
                     {
-                        Hex    = (string)reader["hex"],
-                        Nombre = (string)reader["nombre"]
+                        Hex = (string)reader["hex"],
+                        // 👇 si en BD hay NULL, lo convertimos a ""
+                        Nombre = reader["nombre"] as string ?? string.Empty
                     };
 
                     lista.Add(c);
@@ -62,6 +63,7 @@ namespace NeuromktApi.Services
             return lista;
         }
 
+
         public async Task CrearColorAsync(ColorModel c)
         {
             const string sql = @"
@@ -70,8 +72,16 @@ namespace NeuromktApi.Services
                     CAST(@p_nombre AS varchar)
                 );";
 
-            var pHex = new NpgsqlParameter("@p_hex", c.Hex);
-            var pNombre = new NpgsqlParameter("@p_nombre", c.Nombre);
+            // normalizamos hex
+            var hexNormalizado = c.Hex?.Trim() ?? string.Empty;
+
+            // 👇 si no viene nombre, lo generamos automáticamente
+            var nombreFinal = string.IsNullOrWhiteSpace(c.Nombre)
+                ? $"Color {hexNormalizado}"
+                : c.Nombre!.Trim();
+
+            var pHex = new NpgsqlParameter("@p_hex", hexNormalizado);
+            var pNombre = new NpgsqlParameter("@p_nombre", nombreFinal);
 
             var parametros = new[] { pHex, pNombre };
 
@@ -85,6 +95,8 @@ namespace NeuromktApi.Services
                 throw;
             }
         }
+
+
 
         public async Task EliminarColorAsync(string hex)
         {

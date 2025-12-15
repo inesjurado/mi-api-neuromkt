@@ -1,0 +1,95 @@
+@page "/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/seleccion"
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEProyectoColor EProyectoColor
+@inject NavigationManager Nav
+@inject UserSession UserSession
+@inject IEResultado EResultado
+
+<div class="test-page">
+    <div class="nf-header">
+        <RadzenCard Class="nf-title-card">
+            <div class="nf-title-text">
+                SELECCION DE COLOR
+            </div>
+        </RadzenCard>
+    </div>
+
+    <!-- Tarjeta principal -->
+    <div class="nf-test-row">
+        <div class="test-main-header">
+            <h2>¿Con qué color asocias la fragancia?</h2>
+
+            <!-- ✅ Quitado: no mostramos participante -->
+        </div>
+
+        <!-- GRID DE COLORES -->
+        <div class="test-color-grid">
+            @foreach (var c in coloresProyecto)
+            {
+                var seleccionado = c.ColorHex == colorSeleccionadoHex;
+                <button class="test-color-circle @(seleccionado ? "seleccionado" : "")"
+                        style="background-color:@c.ColorHex"
+                        @onclick="@(() => SeleccionarColor(c.ColorHex))"
+                        title="@c.ColorHex">
+                </button>
+            }
+        </div>
+
+        <!-- Botones -->
+        <div class="test-footer-buttons">
+            <RadzenButton Text="Atrás"
+                          Icon="skip_previous"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@IrAtras" />
+
+            <RadzenButton Text="Siguiente"
+                          Icon="play_arrow"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Disabled="@string.IsNullOrEmpty(colorSeleccionadoHex)"
+                          Click="@IrASiguiente" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ProyectoCodigo { get; set; } = default!;
+    [Parameter] public string ParticipanteCodigo { get; set; } = default!;
+
+    // recogemos el código de prueba por query
+    [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
+    public string? PruebaCodigo { get; set; }
+
+    private List<ProyectoColorModel> coloresProyecto = new();
+    private string? colorSeleccionadoHex;
+
+    protected override async Task OnInitializedAsync()
+    {
+        coloresProyecto = await EProyectoColor.ListarColoresPorProyectoAsync(ProyectoCodigo);
+    }
+
+    private void SeleccionarColor(string hex)
+    {
+        colorSeleccionadoHex = hex;
+        // aquí más adelante podrás guardar en memoria o llamar a la API de resultados
+    }
+
+    private void IrAtras()
+    {
+        Nav.NavigateTo($"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}");
+    }
+
+    private void IrASiguiente()
+    {
+        if (string.IsNullOrEmpty(colorSeleccionadoHex) || string.IsNullOrEmpty(PruebaCodigo))
+            return;
+
+        var hex = Uri.EscapeDataString(colorSeleccionadoHex);
+        var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo);
+
+        Nav.NavigateTo(
+            $"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/palabra?pruebaCodigo={pruebaEncoded}&colorHex={hex}"
+        );
+    }
+}

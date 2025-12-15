@@ -13,7 +13,7 @@ namespace NeuromktApi.Services
         Task<List<ProyectoModel>> ListarProyectosAsync();
         Task EliminarProyectoAsync(string codigo);
         Task<string> CrearProyectoAsync(ProyectoModel proyecto);
-        Task<List<ProyectoResumenModel>> ListarProyectosResumenAsync();
+        Task<List<ProyectoModel>> ListarProyectosPorCreadorAsync(string creadoPor);
         Task<ProyectoModel> ObtenerProyectoAsync(string codigo);
         Task ActualizarProyectoAsync(ProyectoModel proyecto);
     }
@@ -81,14 +81,23 @@ namespace NeuromktApi.Services
         }
 
 
-        // =======================
-        // LISTAR PROYECTOS (ADMIN)
-        // =======================
         public async Task<List<ProyectoModel>> ListarProyectosAsync()
         {
             var lista = new List<ProyectoModel>();
 
-            // NO usar using aquí
+            const string sql = @"
+                SELECT  lp.codigo,
+                        lp.nombre,
+                        lp.proveedor,
+                        lp.descripcion,
+                        lp.creado_por,
+                        lp.fecha_creacion,
+                        COALESCE(lr.num_participantes, 0) AS num_participantes
+                FROM neuromkt.l_proyectos() AS lp
+                LEFT JOIN neuromkt.l_proyectos_resumen() AS lr
+                    ON lp.codigo = lr.codigo;
+            ";
+
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
             if (!wasOpen)
@@ -96,20 +105,28 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT * FROM neuromkt.l_proyectos();";
-
+                await using var cmd = new NpgsqlCommand(sql, conn);
                 await using var reader = await cmd.ExecuteReaderAsync();
+
+                var ordCodigo = reader.GetOrdinal("codigo");
+                var ordNombre = reader.GetOrdinal("nombre");
+                var ordProveedor = reader.GetOrdinal("proveedor");
+                var ordDescripcion = reader.GetOrdinal("descripcion");
+                var ordCreadoPor = reader.GetOrdinal("creado_por");
+                var ordFechaCreacion = reader.GetOrdinal("fecha_creacion");
+                var ordNumParticipantes = reader.GetOrdinal("num_participantes");
+
                 while (await reader.ReadAsync())
                 {
                     var p = new ProyectoModel
                     {
-                        Codigo        = reader["codigo"]        as string ?? string.Empty,
-                        Nombre        = reader["nombre"]        as string ?? string.Empty,
-                        Proveedor     = reader["proveedor"]     as string ?? string.Empty,
-                        Descripcion   = reader["descripcion"]   as string ?? string.Empty,
-                        CreadoPor     = reader["creado_por"]    as string ?? string.Empty,
-                        FechaCreacion = (DateTime)reader["fecha_creacion"]
+                        Codigo = reader.IsDBNull(ordCodigo) ? string.Empty : reader.GetString(ordCodigo),
+                        Nombre = reader.IsDBNull(ordNombre) ? string.Empty : reader.GetString(ordNombre),
+                        Proveedor = reader.IsDBNull(ordProveedor) ? string.Empty : reader.GetString(ordProveedor),
+                        Descripcion = reader.IsDBNull(ordDescripcion) ? string.Empty : reader.GetString(ordDescripcion),
+                        CreadoPor = reader.IsDBNull(ordCreadoPor) ? string.Empty : reader.GetString(ordCreadoPor),
+                        FechaCreacion = reader.GetDateTime(ordFechaCreacion),
+                        NumParticipantes = reader.IsDBNull(ordNumParticipantes) ? 0 : reader.GetInt32(ordNumParticipantes)
                     };
 
                     lista.Add(p);
@@ -122,9 +139,46 @@ namespace NeuromktApi.Services
             }
             finally
             {
-                // Solo cerramos si la abrimos nosotros
                 if (!wasOpen)
                     await conn.CloseAsync();
+            }
+
+            return lista;
+        }
+
+        public async Task<List<ProyectoModel>> ListarProyectosPorCreadorAsync(string creadoPor)
+        {
+            var lista = new List<ProyectoModel>();
+
+            const string sql = "SELECT * FROM neuromkt.l_proyectos_por_creador(@p_creado_por);";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p_creado_por", creadoPor.Trim());
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ProyectoModel
+                    {
+                        Codigo = reader["codigo"] as string ?? string.Empty,
+                        Nombre = reader["nombre"] as string ?? string.Empty,
+                        Proveedor = reader["proveedor"] as string ?? string.Empty,
+                        Descripcion = reader["descripcion"] as string ?? string.Empty,
+                        CreadoPor = reader["creado_por"] as string ?? string.Empty,
+                        FechaCreacion = reader["fecha_creacion"] is DBNull ? default : (DateTime)reader["fecha_creacion"],
+                        NumParticipantes = reader["num_participantes"] is DBNull ? 0 : Convert.ToInt32(reader["num_participantes"])
+                    });
+                }
+            }
+            finally
+            {
+                if (!wasOpen) await conn.CloseAsync();
             }
 
             return lista;
@@ -147,47 +201,6 @@ namespace NeuromktApi.Services
             }
         }
 
-        // =========================================
-        // LISTAR PROYECTOS RESUMEN (INICIO ADMIN)
-        // =========================================
-        public async Task<List<ProyectoResumenModel>> ListarProyectosResumenAsync()
-        {
-            var lista = new List<ProyectoResumenModel>();
-
-            const string sql = "SELECT * FROM neuromkt.l_proyectos_resumen();";
-
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen)
-                await conn.OpenAsync();
-
-            try
-            {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                await using var reader = await cmd.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    var item = new ProyectoResumenModel
-                    {
-                        Codigo = reader["codigo"] as string ?? string.Empty,
-                        Nombre = reader["nombre"] as string ?? string.Empty,
-                        NumParticipantes = reader["num_participantes"] is DBNull
-                            ? 0
-                            : Convert.ToInt32(reader["num_participantes"])
-                    };
-
-                    lista.Add(item);
-                }
-            }
-            finally
-            {
-                if (!wasOpen)
-                    await conn.CloseAsync();
-            }
-
-            return lista;
-        }
 
         public async Task<ProyectoModel> ObtenerProyectoAsync(string codigo)
         {

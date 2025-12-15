@@ -8,5 +8,6 @@ namespace NeuromktApi.Models
         public string Descripcion { get; set; } = string.Empty;
         public string CreadoPor { get; set; } = string.Empty;
         public DateTime FechaCreacion { get; set; }
+        public int NumParticipantes { get; set; }
     }
 }
