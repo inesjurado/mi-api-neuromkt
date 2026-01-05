@@ -98,6 +98,12 @@
                             Style="margin-right:0.5rem;"
                             Click="@(() => AbrirEditarParticipante(p))" />
 
+                        <RadzenButton Icon="file_download"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => DescargarParticipante(p))" />
+
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
@@ -245,6 +251,11 @@
         {
             mensajeError = "Error al descargar los participantes: " + ex.Message;
         }
+    }
+
+    private async Task DescargarParticipante(ParticipanteModel p)
+    {
+        await ExportService.DescargarCsvAsync(new[] { p }, $"Participante_{p.Codigo}.csv");
     }
 
 }

@@ -31,11 +31,15 @@
 
             </RadzenPanelMenu>
             <div class="sidebar-footer">
-                    <RadzenButton Text="Cerrar sesión"
-                                Icon="logout"
-                                ButtonStyle="ButtonStyle.Danger"
-                                Style="width:100%;"
-                                Click="@Logout" />
+                <img src="images/MACOM.png"
+                    alt="MACOM"
+                    class="sidebar-macom-logo" />
+
+                <RadzenButton Text="Cerrar sesión"
+                            Icon="logout"
+                            ButtonStyle="ButtonStyle.Danger"
+                            Style="width:100%;"
+                            Click="@Logout" />
             </div>
         </div>
     </RadzenSidebar>
@@ -97,7 +101,7 @@
         }
 
         // Volver al login
-        NavigationManager.NavigateTo("/login", true);
+        NavigationManager.NavigateTo("/login");
     }
 
     private async Task EditarPerfilPropio()

@@ -49,6 +49,10 @@
                                         Style="width:100%;"
                                         Placeholder="Selecciona género (opcional)"
                                         AllowClear="true" />
+                        @if (!string.IsNullOrEmpty(ErrorGenero))
+                        {
+                            <div class="nf-input-error">@ErrorGenero</div>
+                        }
                     </div>
 
                     <div class="nf-form-field">
@@ -56,6 +60,10 @@
                         <RadzenDatePicker @bind-Value="modelo.FechaNacimiento"
                                           DateFormat="dd/MM/yyyy"
                                           Style="width:100%;" />
+                        @if (!string.IsNullOrEmpty(ErrorFechaNacimiento))
+                        {
+                            <div class="nf-input-error">@ErrorFechaNacimiento</div>
+                        }
                     </div>
 
                     <div class="nf-form-field">
@@ -107,6 +115,10 @@
     private string? MensajeError;
     private string? ErrorEmail;
 
+    private string? ErrorGenero;
+    private string? ErrorFechaNacimiento;
+
+
     private List<string> Generos = new() { "M", "F", "Otro" };
 
     protected override void OnParametersSet()
@@ -135,15 +147,21 @@
 
         MensajeError = null;
         ErrorEmail = null;
+        ErrorGenero = null;
+        ErrorFechaNacimiento = null;
+
     }
 
     private async Task OnSubmit()
     {
         ErrorEmail = null;
+        ErrorGenero = null;
+        ErrorFechaNacimiento = null;
         MensajeError = null;
 
         var valido = true;
 
+        // EMAIL obligatorio + formato simple
         if (string.IsNullOrWhiteSpace(modelo.Email))
         {
             ErrorEmail = "El email es obligatorio.";
@@ -155,8 +173,20 @@
             valido = false;
         }
 
-        if (!valido)
-            return;
+        // GÉNERO obligatorio
+        if (string.IsNullOrWhiteSpace(modelo.Genero))
+        {
+            ErrorGenero = "El género es obligatorio.";
+            valido = false;
+        }
+
+        // FECHA NACIMIENTO obligatoria
+        if (!modelo.FechaNacimiento.HasValue)
+        {
+            ErrorFechaNacimiento = "La fecha de nacimiento es obligatoria.";
+            valido = false;
+        }
+
 
         Busy = true;
 
@@ -164,13 +194,21 @@
         {
             if (!EsEdicion)
             {
-                modelo.CreadoPor = UserSession.Email;
+                if (string.IsNullOrWhiteSpace(UserSession.Email))
+                    throw new Exception("No se ha podido obtener el usuario actual (CreadoPor).");
+
+                modelo.CreadoPor = UserSession.Email.Trim().ToLower();
+                modelo.Email = modelo.Email.Trim().ToLower();
+
                 await EParticipante.CrearParticipanteAsync(modelo);
             }
             else
             {
-                // EDICIÓN
-                var clave = EmailOriginal ?? modelo.Email;
+                var clave = (EmailOriginal ?? modelo.Email)?.Trim().ToLower();
+                if (string.IsNullOrWhiteSpace(clave))
+                    throw new Exception("No se ha podido determinar el email del participante a editar.");
+
+                modelo.Email = modelo.Email.Trim().ToLower();
                 await EParticipante.ActualizarParticipanteAsync(clave, modelo);
             }
 
@@ -192,6 +230,7 @@
             Busy = false;
         }
     }
+
 
     private async Task Cerrar()
     {

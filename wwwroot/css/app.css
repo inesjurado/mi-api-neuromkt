@@ -21,24 +21,27 @@ body {
 
 .login-page {
     height: 100vh;
-    /* antes: min-height */
     box-sizing: border-box;
-    /* cuenta el padding dentro del 100vh */
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f5f5f5;
     position: relative;
     padding: 1.5rem;
-    /* puedes bajar a 1rem si aún ves algo de scroll */
     overflow: hidden;
-    /* por si sobra 1px */
 }
-
 
 .login-card {
     width: 380px;
     max-width: 100%;
+
+    /* 👇 fuerza la misma fuente “normal” en todo el login */
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Para que también afecte a todo lo de dentro (incluido Radzen) */
+.login-card * {
+    font-family: inherit;
 }
 
 .login-header {
@@ -48,12 +51,23 @@ body {
 
 .login-header h1 {
     margin: 0;
+
+    /* 👇 MISMA tipografía que el resto (tipo PROYECTOS) */
+    font-family: inherit;
+    font-weight: 600;
     font-size: 1.7rem;
+    /* ajusta si quieres */
+    letter-spacing: 0.08em;
+    /* look “PROYECTOS” */
+    text-transform: uppercase;
+    color: #0f2e5d;
+    /* opcional, tu azul */
 }
 
 .login-header p {
     margin: 0;
     color: #666;
+    font-family: inherit;
 }
 
 .login-footer {
@@ -67,14 +81,19 @@ body {
     text-decoration: none;
 }
 
+
 .login-logo-img {
     height: 70px;
-    /* ajusta a tu gusto */
     width: auto;
     object-fit: contain;
 }
 
-/* Posiciones ya las tenías bien */
+.login-logo-macom .login-logo-img {
+    height: 110px;
+    /* 👈 ajusta aquí (100–120 suele quedar bien) */
+}
+
+
 .login-logo-upv {
     position: absolute;
     top: 1rem;
@@ -139,23 +158,37 @@ body {
 }
 
 
-
-
-
 /* ======================= */
 /*      LAYOUT GENERAL     */
 /* ======================= */
 
+/* Hace que el contenido del sidebar sea una columna y el footer se vaya abajo */
 .sidebar-content {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
 }
 
+/* Empuja el footer al fondo */
 .sidebar-footer {
+
     margin-top: auto;
-    padding: 0.75rem;
+    padding: 1rem;
 }
+
+/* Logo MACOM encima del botón */
+.sidebar-macom-logo {
+    display: block;
+    width: 100%;
+    max-width: 180px;
+    /* ajusta tamaño */
+    height: auto;
+    margin: 0 auto 0.75rem auto;
+    /* centrado + espacio con el botón */
+    object-fit: contain;
+    opacity: 0.95;
+}
+
 
 /* Página tipo Neurofragancia */
 .nf-page {
@@ -812,6 +845,16 @@ button.rz-button.rz-light:hover:not(:disabled) {
     }
 }
 
+/* ====== FORZAR FONDO BLANCO EN TODO (RADZEN INCLUIDO) ====== */
+/* Fondo general de la aplicación */
 
+/* Tu “página” y cards en blanco */
+.nf-page {
+    background: #ffffff !important;
+}
+
+.nf-table-card {
+    background: #ffffff !important;
+}
 
 /* Icono cerrar modal ya está arriba con nf-modal-close */

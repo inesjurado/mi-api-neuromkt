@@ -11,7 +11,7 @@ namespace NeuromktApi.Services
     public interface IEPrueba
     {
         // AHORA RECIBE EL CÓDIGO DEL PARTICIPANTE (U01, U02, ...)
-        Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteCodigo);
+        Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail);
         Task<string> ActualizarFechaPruebaAsync(string pruebaCodigo, DateTime? fecha = null);
         Task<List<PruebaModel>> ListarPruebasPorProyectoAsync(string proyectoCodigo);
         Task EliminarPruebasPorProyectoAsync(string proyectoCodigo);
@@ -26,13 +26,13 @@ namespace NeuromktApi.Services
             _db = db;
         }
 
-        public async Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteCodigo)
+        public async Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail)
         {
             const string sql = @"
                 SELECT neuromkt.i_prueba(
-                    p_codigo              => :p_codigo,
-                    p_proyecto_codigo     => :p_proyecto_codigo,
-                    p_participante_codigo => :p_participante_codigo
+                    p_codigo               => :p_codigo,
+                    p_proyecto_codigo      => :p_proyecto_codigo,
+                    p_participante_email   => :p_participante_email
                 );
             ";
 
@@ -45,10 +45,13 @@ namespace NeuromktApi.Services
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                // que genere PRB<n>
-                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value);
+                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value); // PRB<n>
                 cmd.Parameters.AddWithValue("p_proyecto_codigo", proyectoCodigo.Trim());
-                cmd.Parameters.AddWithValue("p_participante_codigo", participanteCodigo.Trim());
+
+                if (string.IsNullOrWhiteSpace(participanteEmail))
+                    throw new Exception("El email del participante viene vacío al servicio.");
+
+                cmd.Parameters.AddWithValue("p_participante_email", participanteEmail.Trim().ToLower());
 
                 var result = await cmd.ExecuteScalarAsync();
                 return Convert.ToString(result) ?? string.Empty;
@@ -64,6 +67,7 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
+
 
         public async Task<string> ActualizarFechaPruebaAsync(string pruebaCodigo, DateTime? fecha = null)
         {
@@ -136,15 +140,12 @@ namespace NeuromktApi.Services
         public async Task<List<PruebaModel>> ListarPruebasPorProyectoAsync(string proyectoCodigo)
         {
             const string sql = @"
-                SELECT  pr.codigo,
-                        pr.participante_codigo,
-                        pa.email,
-                        pr.fecha_prueba
-                FROM    neuromkt.pruebas pr
-                JOIN    neuromkt.participantes pa
-                    ON pa.codigo = pr.participante_codigo
-                WHERE   pr.proyecto_codigo = :p_proyecto_codigo
-                ORDER BY pa.email;
+                SELECT  codigo,
+                        participante_email,
+                        fecha_prueba
+                FROM    neuromkt.pruebas
+                WHERE   proyecto_codigo = :p_proyecto_codigo
+                ORDER BY participante_email;
             ";
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
@@ -164,19 +165,13 @@ namespace NeuromktApi.Services
                 {
                     pruebas.Add(new PruebaModel
                     {
-                        Codigo             = reader.GetString(0),                                      // pr.codigo
-                        ParticipanteCodigo = reader.GetString(1),                                      // pr.participante_codigo
-                        ParticipanteEmail  = reader.GetString(2),                                      // pa.email
-                        FechaPrueba        = reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3)
+                        Codigo = reader.GetString(0),
+                        ParticipanteEmail = reader.GetString(1),
+                        FechaPrueba = reader.IsDBNull(2) ? (DateTime?)null : reader.GetDateTime(2)
                     });
                 }
 
                 return pruebas;
-            }
-            catch (PostgresException ex)
-            {
-                Console.WriteLine($"[Postgres] {ex.MessageText}");
-                throw;
             }
             finally
             {
@@ -184,6 +179,7 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
+
 
     }
 }

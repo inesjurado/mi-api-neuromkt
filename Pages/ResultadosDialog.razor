@@ -1,0 +1,102 @@
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@inject IEResultado EResultado
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+@if (Visible)
+{
+    <div class="nf-modal-backdrop">
+        <RadzenCard Class="nf-modal-card">
+            <div class="nf-modal-header">
+                <span>Resultados – @Proyecto?.Nombre</span>
+                <button type="button" class="nf-modal-close" @onclick="Cerrar">✕</button>
+            </div>
+
+            <div class="nf-dialog-form">
+                @if (!string.IsNullOrEmpty(Error))
+                {
+                    <div class="nf-input-error">@Error</div>
+                }
+
+                <div class="nf-form-actions">
+                    <RadzenButton Text="CSV (usuario, color, palabra)"
+                                  Icon="file_download"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Disabled="@Busy"
+                                  Click="@DescargarResultadosCsv" />
+
+                    <RadzenButton Text="Ver estadísticas"
+                                  Icon="bar_chart"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Disabled="@Busy"
+                                  Click="@AbrirEstadisticas"
+                                  Style="margin-left:0.5rem;" />
+                </div>
+            </div>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public ProyectoModel? Proyecto { get; set; }
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    private bool Busy = false;
+    private string? Error;
+
+    private async Task Cerrar()
+    {
+        Error = null;
+        Busy = false;
+        await VisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task DescargarResultadosCsv()
+    {
+        if (Proyecto == null) return;
+
+        try
+        {
+            Busy = true;
+            Error = null;
+
+            var csv = await EResultado.GenerarCsvResultadosProyectoAsync(Proyecto.Codigo);
+
+            await JS.InvokeVoidAsync(
+                "downloadHelper.downloadText",
+                $"resultados_{Proyecto.Codigo}.csv",
+                csv
+            );
+        }
+        catch (Exception ex)
+        {
+            Error = "Error generando CSV: " + ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private void AbrirEstadisticas()
+    {
+        if (Proyecto == null) return;
+
+        // si no nos pasan returnUrl, fallback
+        var returnUrl = string.IsNullOrWhiteSpace(ReturnUrl) ? "/investProyecto" : ReturnUrl;
+
+        // fuerza ruta local
+        if (!returnUrl.StartsWith("/"))
+            returnUrl = "/" + returnUrl;
+
+        var encoded = Uri.EscapeDataString(returnUrl);
+
+        Nav.NavigateTo($"/estadisticas/{Proyecto.Codigo}?returnUrl={encoded}");
+    }
+
+
+
+}

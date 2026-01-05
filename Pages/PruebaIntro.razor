@@ -1,8 +1,9 @@
-@page "/prueba/{ProyectoCodigo}/{ParticipanteCodigo}"
+@page "/prueba/{ProyectoCodigo}/{ParticipanteEmail}"
 
 @using NeuromktApi.Services
 @inject NavigationManager Nav
 @inject UserSession UserSession
+@inject IEParticipante EParticipante
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -22,12 +23,14 @@
         <RadzenCard Class="nf-table-card nf-test-main">
             <div class="nf-test-main-inner">
                 <h2>Bienvenido</h2>
-
+                @if (!string.IsNullOrWhiteSpace(codigoParticipante))
+                {
+                    <p><strong>Código participante:</strong> @codigoParticipante</p>
+                }
                 <p>Vas a oler una fragancia.</p>
                 <p>Tómate 10 segundos para percibirla.</p>
                 <p>Después, selecciona el color y la palabra que mejor la representen.</p>
 
-                <!-- ✅ Quitado: no mostramos el email/código del participante -->
 
                 <div class="nf-form-actions" style="margin-top:1.5rem;">
                     <RadzenButton Text="Siguiente"
@@ -44,17 +47,30 @@
 
 @code {
     [Parameter] public string ProyectoCodigo { get; set; } = default!;
-    [Parameter] public string ParticipanteCodigo { get; set; } = default!;
+    [Parameter] public string ParticipanteEmail { get; set; } = default!;
+
 
     [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
     public string? PruebaCodigo { get; set; }
+
+    private string? codigoParticipante;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ParticipanteEmail viene URL-encoded, lo normalizamos
+        var email = Uri.UnescapeDataString(ParticipanteEmail).Trim().ToLower();
+
+        codigoParticipante = await EParticipante.ObtenerCodigoPorEmailAsync(email);
+    }
+
 
     private void IrASiguiente()
     {
         var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo ?? string.Empty);
 
         Nav.NavigateTo(
-            $"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/seleccion?pruebaCodigo={pruebaEncoded}"
+            $"/prueba/{ProyectoCodigo}/{ParticipanteEmail}/seleccion?pruebaCodigo={pruebaEncoded}"
         );
+
     }
 }

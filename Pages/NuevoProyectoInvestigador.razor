@@ -15,6 +15,7 @@
 @inject IEParticipante EParticipante 
 @inject IEProyectoPalabra ProyectoPalabraService
 @inject IEProyectoColor ProyectoColorService
+@inject IEResultado EResultado
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -51,14 +52,22 @@
 
             <div class="nf-form-field">
                 <label class="nf-label">Nombre del proyecto:</label>
-                <RadzenTextBox @bind-Value="proyecto.Nombre"
-                               Style="width:100%;" />
+                <RadzenTextBox @bind-Value="proyecto.Nombre" Style="width:100%;" />
+                @if (!string.IsNullOrEmpty(errorNombre))
+                {
+                    <div class="nf-input-error">@errorNombre</div>
+                }
             </div>
+
 
             <div class="nf-form-field">
                 <label class="nf-label">Fabricante / marca:</label>
                 <RadzenTextBox @bind-Value="proyecto.Proveedor"
                                Style="width:100%;" />
+                @if (!string.IsNullOrEmpty(errorProveedor))
+                {
+                    <div class="nf-input-error">@errorProveedor</div>
+                }
             </div>
 
             <div class="nf-form-field">
@@ -87,6 +96,10 @@
                                   ButtonStyle="ButtonStyle.Secondary"
                                   Click="@AbrirNuevaPalabraDesdeProyecto" />
                 </div>
+                @if (!string.IsNullOrEmpty(errorPalabras))
+                {
+                    <div class="nf-input-error">@errorPalabras</div>
+                }
             </div>
 
             <!-- Colores -->
@@ -116,6 +129,11 @@
                                   ButtonStyle="ButtonStyle.Secondary"
                                   Click="@AbrirNuevoColorDesdeProyecto" />
                 </div>
+                @if (!string.IsNullOrEmpty(errorColores))
+                {
+                    <div class="nf-input-error">@errorColores</div>
+                }
+
             </div>
 
             <!-- Fragancias -->
@@ -135,6 +153,10 @@
                                   ButtonStyle="ButtonStyle.Secondary"
                                   Click="@AbrirNuevaFraganciaDesdeProyecto" />
                 </div>
+                @if (!string.IsNullOrEmpty(errorFragancias))
+                {
+                    <div class="nf-input-error">@errorFragancias</div>
+                }
             </div>
 
             <hr />
@@ -145,10 +167,10 @@
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <RadzenDropDown Data="@participantes"
                                 TextProperty="Email"
-                                ValueProperty="Codigo"
+                                ValueProperty="Email"
                                 Multiple="true"
                                 @bind-Value="seleccionParticipantes"
-                                Style="width:100%;" 
+                                Style="width:100%;"
                                 Placeholder="Selecciona los participantes que harán la prueba" />
 
                     <RadzenButton Icon="add_circle"
@@ -156,12 +178,16 @@
                                   ButtonStyle="ButtonStyle.Secondary"
                                   Click="@AbrirNuevoParticipanteDesdeProyecto" />
                 </div>
+                @if (!string.IsNullOrEmpty(errorParticipantes))
+                {
+                    <div class="nf-input-error">@errorParticipantes</div>
+                }
             </div>
 
             <div class="nf-form-field">
                 <label class="nf-label">
                     Número de participantes del proyecto:
-                    @((seleccionParticipantes?.Count ?? 0)) (automático)
+                    @((seleccionParticipantes?.Count ?? 0)) 
                 </label>
             </div>
 
@@ -237,6 +263,16 @@
     private bool dialogColorVisible = false;
     private bool dialogPalabraVisible = false;
 
+    // Errores por campo
+    private string? errorNombre;
+    private string? errorProveedor;
+    private string? errorDescripcion;
+    private string? errorPalabras;
+    private string? errorColores;
+    private string? errorFragancias;
+    private string? errorParticipantes;
+
+
     protected override async Task OnInitializedAsync()
     {
         await CargarCombosAsync();
@@ -274,8 +310,9 @@
             // 5) Participantes del proyecto (pruebas)
             var pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(CodigoProyecto!);
             seleccionParticipantes = pruebasProyecto
-                .Select(pr => pr.ParticipanteCodigo)
+                .Select(pr => pr.ParticipanteEmail)
                 .ToList();
+
         }
         catch (Exception ex)
         {
@@ -335,17 +372,18 @@
         mensajeOk = $"Fragancia \"{nueva?.Nombre ?? codigo}\" creada correctamente.";
     }
 
-    private async Task OnParticipanteCreado(string codigoParticipante)
+    private async Task OnParticipanteCreado(string email)
     {
         await CargarCombosAsync();
 
-        if (!seleccionParticipantes.Contains(codigoParticipante))
-            seleccionParticipantes.Add(codigoParticipante);
+        email = email.Trim().ToLower();
 
-        var p = participantes.FirstOrDefault(x => x.Codigo == codigoParticipante);
-        mensajeOk = $"Participante \"{p?.Email ?? codigoParticipante}\" creado correctamente.";
+        if (!seleccionParticipantes.Contains(email))
+            seleccionParticipantes.Add(email);
+
+        var p = participantes.FirstOrDefault(x => x.Email.ToLower() == email);
+        mensajeOk = $"Participante \"{p?.Email ?? email}\" creado correctamente.";
     }
-
 
     private async Task OnColorCreado(string hex)
     {
@@ -374,33 +412,72 @@
         mensajeOk = null;
         mensajeError = null;
 
+        LimpiarErroresFormulario();
+
+        var valido = true;
+
+        // Nombre obligatorio
         if (string.IsNullOrWhiteSpace(proyecto.Nombre))
         {
-            mensajeError = "El nombre del proyecto es obligatorio.";
-            return;
+            errorNombre = "El nombre del proyecto es obligatorio.";
+            valido = false;
         }
 
+        // Proveedor obligatorio
         if (string.IsNullOrWhiteSpace(proyecto.Proveedor))
         {
-            mensajeError = "El fabricante/marca es obligatorio.";
+            errorProveedor = "El fabricante/marca es obligatorio.";
+            valido = false;
+        }
+
+        // (Opcional) Obligar a seleccionar al menos 1
+        if (seleccionPalabras == null || seleccionPalabras.Count == 0)
+        {
+            errorPalabras = "Selecciona al menos una palabra.";
+            valido = false;
+        }
+
+        if (seleccionColores == null || seleccionColores.Count == 0)
+        {
+            errorColores = "Selecciona al menos un color.";
+            valido = false;
+        }
+
+        if (seleccionFragancias == null || seleccionFragancias.Count == 0)
+        {
+            errorFragancias = "Selecciona al menos una fragancia.";
+            valido = false;
+        }
+
+        if (seleccionParticipantes == null || seleccionParticipantes.Count == 0)
+        {
+            errorParticipantes = "Selecciona al menos un participante.";
+            valido = false;
+        }
+
+        if (!valido)
+        {
+            mensajeError = "Revisa los campos marcados en rojo.";
             return;
         }
 
         busy = true;
-
         try
         {
             var emailActual = UserSession.Email;
             if (string.IsNullOrWhiteSpace(emailActual))
             {
                 mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
-                busy = false;
                 return;
             }
-            proyecto.CreadoPor = emailActual;
+
+            proyecto.CreadoPor = emailActual.Trim().ToLower();
 
             string codigoProyecto;
 
+            // =========================
+            // 1) CREAR / ACTUALIZAR
+            // =========================
             if (!EsEdicion)
             {
                 codigoProyecto = await EProyecto.CrearProyectoAsync(proyecto);
@@ -413,13 +490,16 @@
 
                 await EProyecto.ActualizarProyectoAsync(proyecto);
 
+                // En edición: relaciones sí las reseteamos (no afectan resultados)
                 await ProyectoPalabraService.EliminarPorProyectoAsync(codigoProyecto);
                 await ProyectoColorService.EliminarPorProyectoAsync(codigoProyecto);
                 await EProyectoFragancia.EliminarPorProyectoAsync(codigoProyecto);
-                await EPrueba.EliminarPruebasPorProyectoAsync(codigoProyecto);
+
             }
 
-            // PALABRAS
+            // =========================
+            // 2) PALABRAS
+            // =========================
             if (seleccionPalabras?.Count > 0)
             {
                 foreach (var palabra in seleccionPalabras)
@@ -428,7 +508,9 @@
                 }
             }
 
-            // COLORES
+            // =========================
+            // 3) COLORES
+            // =========================
             if (seleccionColores?.Count > 0)
             {
                 foreach (var hex in seleccionColores)
@@ -437,7 +519,9 @@
                 }
             }
 
-            // FRAGANCIAS
+            // =========================
+            // 4) FRAGANCIAS
+            // =========================
             if (seleccionFragancias?.Count > 0)
             {
                 foreach (var codFragancia in seleccionFragancias)
@@ -446,27 +530,62 @@
                 }
             }
 
-            // PARTICIPANTES → PRUEBAS
-            if (seleccionParticipantes?.Count > 0)
+            // =========================
+            // 5) PARTICIPANTES → PRUEBAS
+            // =========================
+            var pruebasActuales = await EPrueba.ListarPruebasPorProyectoAsync(codigoProyecto);
+
+            var emailsActuales = pruebasActuales
+                .Select(x => x.ParticipanteEmail.Trim().ToLower())
+                .ToHashSet();
+
+            var emailsSeleccionados = (seleccionParticipantes ?? new List<string>())
+                .Select(x => x.Trim().ToLower())
+                .ToHashSet();
+
+            // AÑADIR NUEVOS
+            var nuevos = emailsSeleccionados.Except(emailsActuales);
+            foreach (var emailNuevo in nuevos)
             {
-                foreach (var participanteCodigo in seleccionParticipantes)
+                await EPrueba.CrearPruebaAsync(codigoProyecto, emailNuevo);
+            }
+
+            // QUITAR SOLO SI NO TIENE RESULTADOS
+            if (EsEdicion)
+            {
+                var quitados = emailsActuales.Except(emailsSeleccionados);
+
+                foreach (var emailQuitado in quitados)
                 {
-                    await EPrueba.CrearPruebaAsync(codigoProyecto, participanteCodigo); // 👈 ahora es codigo
+                    var prueba = pruebasActuales.FirstOrDefault(x =>
+                        x.ParticipanteEmail.Trim().ToLower() == emailQuitado);
+
+                    if (prueba == null) continue;
+
+                    var tieneResultados = await EResultado.ExistenResultadosParaPruebaAsync(prueba.Codigo);
+
+                    if (tieneResultados)
+                    {
+                        // No borramos: conserva resultados
+                        mensajeError = $"No puedes quitar a {emailQuitado} porque ya tiene resultados registrados.";
+                        continue;
+                    }
+
+                    await EPrueba.EliminarPruebasPorProyectoAsync(prueba.Codigo);
                 }
             }
 
+            // =========================
+            // FIN
+            // =========================
             mensajeOk = EsEdicion
                 ? "Proyecto actualizado correctamente."
                 : "Proyecto guardado correctamente.";
 
             if (empezarPrueba)
-            {
                 Nav.NavigateTo($"/investigador/pruebas/{codigoProyecto}");
-            }
             else
-            {
                 Nav.NavigateTo("/investProyecto");
-            }
         }
         catch (PostgresException ex)
         {
@@ -481,6 +600,19 @@
             busy = false;
         }
     }
+
+    private void LimpiarErroresFormulario()
+    {
+        errorNombre = null;
+        errorProveedor = null;
+        errorDescripcion = null;
+        errorPalabras = null;
+        errorColores = null;
+        errorFragancias = null;
+        errorParticipantes = null;
+    }
+
+
 
     private void Cancelar()
     {

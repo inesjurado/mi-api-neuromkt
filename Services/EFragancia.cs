@@ -61,6 +61,13 @@ namespace NeuromktApi.Services
                 var result = await cmd.ExecuteScalarAsync();
                 return Convert.ToString(result) ?? string.Empty;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR ListarFraganciasAsync: " + ex.Message);
+                Console.WriteLine("INNER: " + ex.InnerException?.Message);
+                Console.WriteLine(ex.ToString());
+                throw;
+            }
             finally
             {
                 if (!wasOpen)
@@ -83,24 +90,22 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"
-                    SELECT codigo, nombre, proveedor, descripcion
-                    FROM neuromkt.fragancias
-                    ORDER BY codigo;";
+                await using var cmd = new NpgsqlCommand(
+                    "SELECT * FROM neuromkt.f_fragancias();",
+                    conn
+                );
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    var f = new FraganciaModel
+                    lista.Add(new FraganciaModel
                     {
-                        Codigo      = reader["codigo"]      as string ?? string.Empty,
-                        Nombre      = reader["nombre"]      as string ?? string.Empty,
-                        Proveedor   = reader["proveedor"]   as string,
-                        Descripcion = reader["descripcion"] as string
-                    };
-
-                    lista.Add(f);
+                        Codigo      = reader.GetString(0),
+                        Nombre      = reader.GetString(1),
+                        Proveedor   = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        CreadoPor   = reader.IsDBNull(4) ? null : reader.GetString(4)
+                    });
                 }
             }
             catch (PostgresException ex)
@@ -116,6 +121,7 @@ namespace NeuromktApi.Services
 
             return lista;
         }
+
 
         // ======================
         // ACTUALIZAR FRAGANCIA

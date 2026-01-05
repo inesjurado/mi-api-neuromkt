@@ -105,11 +105,17 @@
                                     Width="120px"
                                     Filterable="false">
                     <Template Context="item">
+                        <RadzenButton Icon="analytics"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => AbrirDialogoResultados(item))" />
                         <RadzenButton Icon="file_download"
                                     Size="ButtonSize.Small"
                                     ButtonStyle="ButtonStyle.Light"
                                     Style="margin-right:0.5rem;"
-                                    Disabled="true" />
+                                    Click="@(() => DescargarProyecto(item))" />
+
 
                         <RadzenButton Icon="delete"
                                     Size="ButtonSize.Small"
@@ -214,6 +220,12 @@
     </div>
 }
 
+<ResultadosDialog Visible="@resultadosDialogVisible"
+                  VisibleChanged="@(v => resultadosDialogVisible = v)"
+                  Proyecto="@proyectoResultados"
+                  ReturnUrl="/proyectos" />
+
+
 
 @code {
     private List<ProyectoModel> proyectos = new();
@@ -233,6 +245,9 @@
     private string? errorProveedorProyecto;
     private string? errorDescripcionProyecto;
     private string? errorCreadoPorProyecto;
+
+    private bool resultadosDialogVisible = false;
+    private ProyectoModel? proyectoResultados;
 
     // Lista filtrada
     private List<ProyectoModel> proyectosFiltrados = new();
@@ -330,6 +345,12 @@
         nuevoDialogVisible = false;
     }
 
+    private void AbrirDialogoResultados(ProyectoModel p)
+    {
+        proyectoResultados = p;
+        resultadosDialogVisible = true;
+    }
+
     private async Task OnSubmitNuevoProyecto()
     {
         LimpiarErroresProyecto();
@@ -348,15 +369,6 @@
             errorProveedorProyecto = "El proveedor es obligatorio.";
             valido = false;
         }
-
-        // Descripción la dejamos opcional, pero si quieres exigir algo:
-        /*
-        if (string.IsNullOrWhiteSpace(nuevoProyecto.Descripcion))
-        {
-            errorDescripcionProyecto = "La descripción es obligatoria.";
-            valido = false;
-        }
-        */
 
         if (string.IsNullOrWhiteSpace(nuevoProyecto.CreadoPor))
         {
@@ -403,5 +415,12 @@
             mensajeError = "Error al descargar los proyectos: " + ex.Message;
         }
     }
+
+    private async Task DescargarProyecto(ProyectoModel p)
+    {
+        await ExportService.DescargarCsvAsync(new[] { p }, $"Proyecto_{p.Codigo}.csv");
+    }
+
+
 
 }

@@ -178,4 +178,5 @@
 /Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/NeuromktApi.genruntimeconfig.cache
 /Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/ref/NeuromktApi.dll
 /Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/compressed/7xrdlb1kwa-4neq31xbxx.gz
-/Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/compressed/a1yevoyik1-47xm7sc4rm.gz
+/Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/compressed/a1yevoyik1-9sb2hynwgc.gz
+/Users/inesjuradorichards/Documents/NeuromktApi/obj/Debug/net9.0/compressed/p5wpsowxis-5uebe17c4e.gz

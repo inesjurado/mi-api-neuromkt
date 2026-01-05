@@ -82,6 +82,13 @@
                                       ButtonStyle="ButtonStyle.Light"
                                       Click="@(() => EditarUsuario(item))"
                                       Style="margin-right:0.5rem;" />
+                        
+                        <RadzenButton Icon="file_download"
+                                        Size="ButtonSize.Small"
+                                        ButtonStyle="ButtonStyle.Light"
+                                        Style="margin-right:0.5rem;"
+                                        Click="@(() => DescargarPerfil(item))" />
+
 
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
@@ -211,4 +218,10 @@
             mensajeError = "Error al descargar los usuarios: " + ex.Message;
         }
     }
+
+    private async Task DescargarPerfil(UsuarioModel perfil)
+    {
+        await ExportService.DescargarCsvAsync(new[] { perfil }, $"Perfil_{perfil.Nombre}.csv");
+    }
+
 }

@@ -1,4 +1,4 @@
-@page "/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/palabra"
+@page "/prueba/{ProyectoCodigo}/{ParticipanteEmail}/palabra"
 
 @using NeuromktApi.Models
 @using NeuromktApi.Services
@@ -98,7 +98,7 @@
 
 @code {
     [Parameter] public string ProyectoCodigo { get; set; } = default!;
-    [Parameter] public string ParticipanteCodigo { get; set; } = default!;
+    [Parameter] public string ParticipanteEmail { get; set; } = default!;
 
     // vienen por query ?pruebaCodigo=&colorHex=
     [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
@@ -130,9 +130,12 @@
         var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo ?? string.Empty);
         var colorEncoded  = Uri.EscapeDataString(ColorHexSeleccionado ?? string.Empty);
 
+        var participanteEncoded = Uri.EscapeDataString(ParticipanteEmail);
+
         Nav.NavigateTo(
-            $"/prueba/{ProyectoCodigo}/{ParticipanteCodigo}/seleccion?pruebaCodigo={pruebaEncoded}&colorHex={colorEncoded}"
+            $"/prueba/{ProyectoCodigo}/{participanteEncoded}/seleccion?pruebaCodigo={pruebaEncoded}&colorHex={colorEncoded}"
         );
+
     }
 
     private async Task Finalizar()

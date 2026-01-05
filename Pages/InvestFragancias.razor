@@ -91,6 +91,13 @@
                                     Style="margin-right:0.5rem;"
                                     Click="@(() => AbrirEditarFragancia(f))" />
 
+                        <RadzenButton Icon="file_download"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => DescargarFragancia(f))" />
+                        
+
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
@@ -222,6 +229,11 @@
         {
             mensajeError = "Error al descargar las fragancias: " + ex.Message;
         }
+    }
+
+    private async Task DescargarFragancia(FraganciaModel f)
+    {
+        await ExportService.DescargarCsvAsync(new[] { f }, $"Fragancia_{f.Codigo}.csv");
     }
 
 }

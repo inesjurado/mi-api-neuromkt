@@ -8,6 +8,8 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject IExportService ExportService
+@inject IEResultado EResultado
+
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
@@ -97,6 +99,17 @@
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => AbrirDialogoEmpezar(p))" />
+                        <RadzenButton Icon="file_download"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => DescargarProyecto(p))" />
+                        
+                        <RadzenButton Icon="analytics"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => AbrirDialogoResultados(p))" />
 
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
@@ -164,6 +177,14 @@
     </div>
 }
 
+<ResultadosDialog Visible="@resultadosDialogVisible"
+                  VisibleChanged="@(v => resultadosDialogVisible = v)"
+                  Proyecto="@proyectoResultados"
+                  ReturnUrl="/investProyecto" />
+
+
+
+
 @code {
     private List<ProyectoModel> proyectos = new();
     private bool busy = false;
@@ -177,6 +198,10 @@
     private string? pruebaSeleccionadaCodigo; // aquí guardo PRB<n>
     private string? dialogError;
     private bool empezarBusy = false;
+
+    // RESULTADOS
+    private string? resultadosDialogError;
+    private bool busyResultados = false;
 
     private bool PuedeConfirmarEmpezar =>
         !string.IsNullOrEmpty(pruebaSeleccionadaCodigo) && !empezarBusy;
@@ -305,9 +330,9 @@
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(prueba.ParticipanteCodigo))
+        if (string.IsNullOrWhiteSpace(prueba.ParticipanteEmail))
         {
-            dialogError = "La prueba no tiene participante asociado (código vacío).";
+            dialogError = "La prueba no tiene participante asociado (email vacío).";
             return;
         }
 
@@ -317,7 +342,7 @@
         {
             await EPrueba.ActualizarFechaPruebaAsync(prueba.Codigo);
 
-            var participanteEncoded = Uri.EscapeDataString(prueba.ParticipanteCodigo);
+            var participanteEncoded = Uri.EscapeDataString(prueba.ParticipanteEmail);
             var pruebaEncoded = Uri.EscapeDataString(prueba.Codigo);
 
             Nav.NavigateTo(
@@ -345,4 +370,57 @@
             mensajeError = "Error al descargar los proyectos: " + ex.Message;
         }
     }
+
+
+    // RESULTADOS
+
+    // RESULTADOS (ahora lo maneja el componente)
+    private bool resultadosDialogVisible = false;
+    private ProyectoModel? proyectoResultados;
+
+    private void AbrirDialogoResultados(ProyectoModel p)
+    {
+        proyectoResultados = p;
+        resultadosDialogVisible = true;
+    }
+
+
+    private void CerrarDialogoResultados()
+    {
+        proyectoResultados = null;
+        busyResultados = false;
+    }
+
+    private async Task DescargarResultadosCsv()
+    {
+        if (proyectoResultados == null) return;
+
+        try
+        {
+            var csv = await EResultado.GenerarCsvResultadosProyectoAsync(proyectoResultados.Codigo);
+
+            await JS.InvokeVoidAsync(
+                "downloadHelper.downloadText",
+                $"resultados_{proyectoResultados.Codigo}.csv",
+                csv
+            );
+        }
+        catch (Exception ex)
+        {
+            resultadosDialogError = "Error generando CSV: " + ex.Message;
+        }
+    }
+
+
+    private void AbrirEstadisticas()
+    {
+        if (proyectoResultados == null) return;
+        Nav.NavigateTo($"/estadisticas/{proyectoResultados.Codigo}");
+    }
+
+    private async Task DescargarProyecto(ProyectoModel p)
+    {
+        await ExportService.DescargarCsvAsync(new[] { p }, $"Proyecto_{p.Codigo}.csv");
+    }
+
 }

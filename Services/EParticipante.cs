@@ -15,6 +15,8 @@ namespace NeuromktApi.Services
         Task<string> CrearParticipanteAsync(ParticipanteModel participante);   // 👈 CAMBIO
         Task ActualizarParticipanteAsync(string email, ParticipanteModel participante);
         Task EliminarParticipanteAsync(string email);
+        Task<string?> ObtenerCodigoPorEmailAsync(string email);
+
     }
 
     public class EParticipante : IEParticipante
@@ -207,5 +209,28 @@ namespace NeuromktApi.Services
                 throw;
             }
         }
+
+
+        public async Task<string?> ObtenerCodigoPorEmailAsync(string email)
+        {
+            const string sql = @"SELECT neuromkt.f_participante_codigo_por_email(:p_email);";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("p_email", email.Trim().ToLower());
+                var result = await cmd.ExecuteScalarAsync();
+                return result == null || result == DBNull.Value ? null : Convert.ToString(result);
+            }
+            finally
+            {
+                if (!wasOpen) await conn.CloseAsync();
+            }
+        }
+
     }
 }

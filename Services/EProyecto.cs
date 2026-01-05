@@ -85,18 +85,7 @@ namespace NeuromktApi.Services
         {
             var lista = new List<ProyectoModel>();
 
-            const string sql = @"
-                SELECT  lp.codigo,
-                        lp.nombre,
-                        lp.proveedor,
-                        lp.descripcion,
-                        lp.creado_por,
-                        lp.fecha_creacion,
-                        COALESCE(lr.num_participantes, 0) AS num_participantes
-                FROM neuromkt.l_proyectos() AS lp
-                LEFT JOIN neuromkt.l_proyectos_resumen() AS lr
-                    ON lp.codigo = lr.codigo;
-            ";
+            const string sql = @"SELECT * FROM neuromkt.l_proyectos_admin();";
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
@@ -118,18 +107,16 @@ namespace NeuromktApi.Services
 
                 while (await reader.ReadAsync())
                 {
-                    var p = new ProyectoModel
+                    lista.Add(new ProyectoModel
                     {
-                        Codigo = reader.IsDBNull(ordCodigo) ? string.Empty : reader.GetString(ordCodigo),
-                        Nombre = reader.IsDBNull(ordNombre) ? string.Empty : reader.GetString(ordNombre),
-                        Proveedor = reader.IsDBNull(ordProveedor) ? string.Empty : reader.GetString(ordProveedor),
-                        Descripcion = reader.IsDBNull(ordDescripcion) ? string.Empty : reader.GetString(ordDescripcion),
-                        CreadoPor = reader.IsDBNull(ordCreadoPor) ? string.Empty : reader.GetString(ordCreadoPor),
-                        FechaCreacion = reader.GetDateTime(ordFechaCreacion),
+                        Codigo = reader.IsDBNull(ordCodigo) ? "" : reader.GetString(ordCodigo),
+                        Nombre = reader.IsDBNull(ordNombre) ? "" : reader.GetString(ordNombre),
+                        Proveedor = reader.IsDBNull(ordProveedor) ? "" : reader.GetString(ordProveedor),
+                        Descripcion = reader.IsDBNull(ordDescripcion) ? "" : reader.GetString(ordDescripcion),
+                        CreadoPor = reader.IsDBNull(ordCreadoPor) ? "" : reader.GetString(ordCreadoPor),
+                        FechaCreacion = reader.IsDBNull(ordFechaCreacion) ? DateTime.MinValue : reader.GetDateTime(ordFechaCreacion),
                         NumParticipantes = reader.IsDBNull(ordNumParticipantes) ? 0 : reader.GetInt32(ordNumParticipantes)
-                    };
-
-                    lista.Add(p);
+                    });
                 }
             }
             catch (PostgresException ex)
@@ -145,6 +132,7 @@ namespace NeuromktApi.Services
 
             return lista;
         }
+
 
         public async Task<List<ProyectoModel>> ListarProyectosPorCreadorAsync(string creadoPor)
         {
