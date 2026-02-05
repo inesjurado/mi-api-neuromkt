@@ -10,7 +10,6 @@
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -19,20 +18,14 @@
         </RadzenCard>
     </div>
 
-    <div class="nf-toolbar" style="display:flex; gap:1rem;">
-        <RadzenButton Icon="add_circle"
-                      Text="Nuevo proyecto"
-                      ButtonStyle="ButtonStyle.Primary"
-                      Click="@AbrirNuevoProyecto" />
-
+    <div class="nf-toolbar" style="display:flex; justify-content:flex-end; gap:1rem;">
         <RadzenButton Icon="file_download"
-                        Text="Descargar Proyectos"
-                        ButtonStyle="ButtonStyle.Secondary"
-                        Disabled="@(!proyectos.Any())"
-                        Click="@DescargarProyectos" />
+                    Text="Descargar Proyectos"
+                    ButtonStyle="ButtonStyle.Secondary"
+                    Disabled="@(!proyectos.Any())"
+                    Click="@DescargarProyectos" />
     </div>
 
-    <!-- Mensajes -->
     @if (!string.IsNullOrEmpty(mensajeOk))
     {
         <RadzenAlert Severity="AlertSeverity.Success"
@@ -49,7 +42,6 @@
         </RadzenAlert>
     }
 
-    <!-- Tabla -->
     <RadzenCard Class="nf-table-card">
         <RadzenDataGrid TItem="ProyectoModel"
                         Data="@proyectos"
@@ -92,7 +84,6 @@
                                     Filterable="true"
                                     FilterOperator="FilterOperator.Contains" />
 
-                @* FECHA: Radzen muestra el popup con 2 condiciones, así puedes poner el rango *@
                 <RadzenDataGridColumn TItem="ProyectoModel"
                                     Property="FechaCreacion"
                                     Title="Fecha creación"
@@ -354,8 +345,6 @@
     private async Task OnSubmitNuevoProyecto()
     {
         LimpiarErroresProyecto();
-
-        // ==== VALIDACIÓN FRONT ====
         var valido = true;
 
         if (string.IsNullOrWhiteSpace(nuevoProyecto.Nombre))
@@ -378,11 +367,8 @@
 
         if (!valido)
         {
-            // No llamamos a la API si hay errores
             return;
         }
-
-        // ==== LLAMADA A LA API ====
         creandoBusy = true;
 
         try
@@ -395,7 +381,6 @@
         }
         catch (Exception ex)
         {
-            // Texto de Postgres o de la API
             mensajeFormError = ex.Message;
         }
         finally

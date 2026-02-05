@@ -98,9 +98,6 @@ namespace NeuromktApi.Services
             }
         }
 
-        /// <summary>
-        /// Actualiza una palabra usando neuromkt.u_palabra(p_palabra_original, p_palabra_nueva)
-        /// </summary>
         public async Task ActualizarPalabraAsync(string palabraOriginal, string palabraNueva)
         {
             const string sql = @"

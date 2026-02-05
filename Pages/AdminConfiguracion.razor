@@ -10,7 +10,6 @@
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -21,7 +20,6 @@
 
     <div class="config-columns">
 
-        @* ========= COLORES ========= *@
         <RadzenCard Class="nf-table-card">
             <div class="nf-toolbar">
                 <RadzenButton Icon="add_circle"
@@ -92,7 +90,6 @@
             </RadzenDataGrid>
         </RadzenCard>
 
-        @* ========= PALABRAS ========= *@
         <RadzenCard Class="nf-table-card" Style="margin-top:2rem;">
 
             <div class="nf-toolbar">
@@ -166,7 +163,6 @@
     </div>
 </RadzenCard>
 
-@* ==== POPUPS REUTILIZABLES ==== *@
 <ColorForm Visible="@dialogColorVisible"
            VisibleChanged="@(v => dialogColorVisible = v)"
            EsEdicion="@dialogColorEsEdicion"
@@ -180,11 +176,10 @@
              OnGuardado="@OnPalabraGuardada" />
 
 @code {
-    // === MODELOS EN MEMORIA ===
     private List<ColorModel> colores = new();
     private List<PalabraModel> palabras = new();
 
-    // ----- Colores -----
+    // Colores
     private bool busyColor = false;
     private string? mensajeColorOk;
     private string? mensajeColorError;
@@ -194,7 +189,7 @@
     private bool dialogColorEsEdicion = false;
     private ColorModel? colorSeleccionado;
 
-    // ----- Palabras -----
+    // Palabras 
     private bool busyPalabra = false;
     private string? mensajePalabraOk;
     private string? mensajePalabraError;
@@ -204,14 +199,12 @@
     private bool dialogPalabraEsEdicion = false;
     private string? palabraSeleccionada;
 
-    // ===== CARGA INICIAL =====
     protected override async Task OnInitializedAsync()
     {
         await CargarColoresAsync();
         await CargarPalabrasAsync();
     }
 
-    // ===== COLORES =====
     private async Task CargarColoresAsync()
     {
         try
@@ -296,7 +289,6 @@
         }
     }
 
-    // ===== PALABRAS =====
     private async Task CargarPalabrasAsync()
     {
         try

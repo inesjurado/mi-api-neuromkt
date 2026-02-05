@@ -65,8 +65,10 @@ namespace NeuromktApi.Services
         public async Task<List<ProyectoFraganciaModel>> ListarFraganciasPorProyectoAsync(string proyectoCodigo)
         {
             const string sql = @"
-                SELECT codigo, fragancia_codigo
-                FROM neuromkt.f_proyecto_fragancias(@p_proyecto_codigo);
+                SELECT pf.codigo, pf.fragancia_codigo, f.nombre
+                FROM neuromkt.f_proyecto_fragancias(@p_proyecto_codigo) pf
+                JOIN neuromkt.fragancias f ON f.codigo = pf.fragancia_codigo
+                ORDER BY f.nombre;
             ";
 
             var lista = new List<ProyectoFraganciaModel>();
@@ -88,6 +90,7 @@ namespace NeuromktApi.Services
                     {
                         Codigo          = reader.GetString(0),
                         FraganciaCodigo = reader.GetString(1),
+                        FraganciaNombre = reader.GetString(2),
                         ProyectoCodigo  = proyectoCodigo
                     });
                 }

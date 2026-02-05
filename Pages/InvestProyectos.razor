@@ -1,19 +1,22 @@
 @page "/investProyecto"
+
 @using NeuromktApi.Models
 @using NeuromktApi.Services
 @using Npgsql
+@using System.Linq
+
 @inject UserSession UserSession
 @inject IEProyecto EProyecto
 @inject IEPrueba EPrueba
+@inject IEParticipante EParticipante
+@inject IEFragancia EFragancia
+@inject IEProyectoFragancia EProyectoFragancia
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject IExportService ExportService
-@inject IEResultado EResultado
-
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -40,16 +43,14 @@
 
         @if (!string.IsNullOrEmpty(mensajeOk))
         {
-            <RadzenAlert Severity="AlertSeverity.Success"
-                         Style="margin-bottom:0.75rem;">
+            <RadzenAlert Severity="AlertSeverity.Success" Style="margin-bottom:0.75rem;">
                 @mensajeOk
             </RadzenAlert>
         }
 
         @if (!string.IsNullOrEmpty(mensajeError))
         {
-            <RadzenAlert Severity="AlertSeverity.Error"
-                         Style="margin-bottom:0.75rem;">
+            <RadzenAlert Severity="AlertSeverity.Error" Style="margin-bottom:0.75rem;">
                 @mensajeError
             </RadzenAlert>
         }
@@ -84,8 +85,27 @@
                                       Filterable="false" />
 
                 <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="Proveedor"
+                                    Title="Proveedor"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="Descripcion"
+                                    Title="Descripción"
+                                    Filterable="true"
+                                    FilterOperator="FilterOperator.Contains" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
+                                    Property="FechaCreacion"
+                                    Title="Fecha creación"
+                                    Type="typeof(DateTime)"
+                                    FormatString="{0:dd/MM/yyyy}"
+                                    Filterable="true" />
+
+                <RadzenDataGridColumn TItem="ProyectoModel"
                                       Title="Acciones"
-                                      Width="200px"
+                                      Width="220px"
                                       Filterable="false">
                     <Template Context="p">
                         <RadzenButton Icon="edit"
@@ -99,17 +119,18 @@
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => AbrirDialogoEmpezar(p))" />
-                        <RadzenButton Icon="file_download"
-                                    Size="ButtonSize.Small"
-                                    ButtonStyle="ButtonStyle.Light"
-                                    Style="margin-right:0.5rem;"
-                                    Click="@(() => DescargarProyecto(p))" />
-                        
+
                         <RadzenButton Icon="analytics"
-                                    Size="ButtonSize.Small"
-                                    ButtonStyle="ButtonStyle.Light"
-                                    Style="margin-right:0.5rem;"
-                                    Click="@(() => AbrirDialogoResultados(p))" />
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-right:0.5rem;"
+                                      Click="@(() => AbrirDialogoResultados(p))" />
+
+                        <RadzenButton Icon="file_download"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Style="margin-right:0.5rem;"
+                                      Click="@(() => DescargarProyecto(p))" />
 
                         <RadzenButton Icon="delete"
                                       Size="ButtonSize.Small"
@@ -144,20 +165,76 @@
             </div>
 
             <div class="nf-dialog-form">
+
+                @if ((fraganciasProyecto?.Count ?? 0) > 1)
+                {
+                    <div class="nf-form-field">
+                        <label>Fragancia</label>
+
+                        <RadzenDropDown Data="@fraganciasProyecto"
+                                        TextProperty="Nombre"
+                                        ValueProperty="Codigo"
+                                        @bind-Value="fraganciaSeleccionadaCodigo"
+                                        Change="@OnFraganciaCambiada"
+                                        Style="width:100%;"
+                                        Placeholder="Selecciona la fragancia a usar" />
+
+                    </div>
+                }
+                else if ((fraganciasProyecto?.Count ?? 0) == 1)
+                {
+                    <div class="nf-form-field">
+                        <label>Fragancia</label>
+                        <div style="
+                            padding:0.6rem 0.75rem;
+                            border:1px solid #d1d5db;
+                            border-radius:6px;
+                            background:#f9fafb;
+                            color:#111827;
+                            font-weight:500;
+                        ">
+                            @fraganciasProyecto[0].Nombre
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="nf-form-field">
+                        <div class="nf-input-error">
+                            Este proyecto no tiene fragancias asociadas.
+                        </div>
+                    </div>
+                }
+
                 <div class="nf-form-field">
                     <label>Participante</label>
-                    <RadzenDropDown Data="@pruebasProyecto"
-                                    TextProperty="ParticipanteEmail"
-                                    ValueProperty="Codigo"
-                                    @bind-Value="pruebaSeleccionadaCodigo"
-                                    Style="width:100%;"
-                                    Placeholder="Selecciona un participante" />
 
-                    @if (!string.IsNullOrEmpty(dialogError))
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <RadzenDropDown Data="@participantesDisponibles"
+                                        TextProperty="Email"
+                                        ValueProperty="Email"
+                                        @bind-Value="participanteSeleccionadoEmail"
+                                        Style="flex:1;"
+                                        Placeholder="Selecciona un participante disponible" />
+
+                        <RadzenButton Icon="add_circle"
+                                      Text="Añadir"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="@AbrirPopupNuevoParticipante" />
+                    </div>
+
+                    @if (participantesDisponibles != null && participantesDisponibles.Count == 0)
                     {
-                        <div class="nf-input-error">@dialogError</div>
+                        <div class="nf-input-error" style="margin-top:0.5rem;">
+                            No hay participantes disponibles para esta fragancia.
+                        </div>
                     }
                 </div>
+
+                @if (!string.IsNullOrEmpty(dialogError))
+                {
+                    <div class="nf-input-error">@dialogError</div>
+                }
 
                 <div class="nf-form-actions">
                     <RadzenButton ButtonStyle="ButtonStyle.Primary"
@@ -177,13 +254,15 @@
     </div>
 }
 
+<NuevoParticipante Visible="@dialogoParticipanteVisible"
+                   VisibleChanged="@(v => dialogoParticipanteVisible = v)"
+                   EsEdicion="false"
+                   OnGuardado="@OnParticipanteCreado" />
+
 <ResultadosDialog Visible="@resultadosDialogVisible"
                   VisibleChanged="@(v => resultadosDialogVisible = v)"
-                  Proyecto="@proyectoResultados"
+                  Proyecto="@proyectoSeleccionado"
                   ReturnUrl="/investProyecto" />
-
-
-
 
 @code {
     private List<ProyectoModel> proyectos = new();
@@ -191,20 +270,43 @@
     private string? mensajeOk;
     private string? mensajeError;
 
-    // Modal empezar
     private bool empezarDialogVisible = false;
     private ProyectoModel? proyectoSeleccionado;
-    private List<PruebaModel> pruebasProyecto = new();
-    private string? pruebaSeleccionadaCodigo; // aquí guardo PRB<n>
+
+    private bool resultadosDialogVisible = false;
+
+    // Participantes disponibles 
+    private List<ParticipanteModel> participantesDisponibles = new();
+    private string? participanteSeleccionadoEmail;
+
+    // Fragancias del proyecto
+    private List<FraganciaModel> fraganciasProyecto = new();
+    private string? fraganciaSeleccionadaCodigo;
+
     private string? dialogError;
     private bool empezarBusy = false;
 
-    // RESULTADOS
-    private string? resultadosDialogError;
-    private bool busyResultados = false;
+    private bool dialogoParticipanteVisible = false;
 
-    private bool PuedeConfirmarEmpezar =>
-        !string.IsNullOrEmpty(pruebaSeleccionadaCodigo) && !empezarBusy;
+    private void NuevoProyecto() => Nav.NavigateTo("/nuevoProyecto");
+    private void VerProyecto(ProyectoModel p) => Nav.NavigateTo($"/nuevoProyecto/{p.Codigo}");
+
+    private bool PuedeConfirmarEmpezar
+    {
+        get
+        {
+            if (empezarBusy) return false;
+            if (proyectoSeleccionado == null) return false;
+
+            if ((fraganciasProyecto?.Count ?? 0) == 0) return false;
+            if (fraganciasProyecto.Count > 1 && string.IsNullOrWhiteSpace(fraganciaSeleccionadaCodigo)) return false;
+
+            if (string.IsNullOrWhiteSpace(participanteSeleccionadoEmail)) return false;
+            if ((participantesDisponibles?.Count ?? 0) == 0) return false;
+
+            return true;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -216,13 +318,15 @@
         try
         {
             mensajeError = null;
+
             var emailActual = UserSession.Email;
             if (string.IsNullOrWhiteSpace(emailActual))
             {
                 mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
                 return;
             }
-            proyectos = await EProyecto.ListarProyectosPorCreadorAsync(emailActual);
+
+            proyectos = await EProyecto.ListarProyectosPorCreadorAsync(emailActual.Trim().ToLower());
         }
         catch (Exception ex)
         {
@@ -230,23 +334,11 @@
         }
     }
 
-    private void NuevoProyecto()
-    {
-        Nav.NavigateTo("/nuevoProyecto");
-    }
-
-    private void VerProyecto(ProyectoModel p)
-    {
-        Nav.NavigateTo($"/nuevoProyecto/{p.Codigo}");
-    }
-
     private async Task BorrarProyecto(ProyectoModel p)
     {
         if (busy) return;
 
-        var confirmar = await JS.InvokeAsync<bool>(
-            "confirm", $"¿Seguro que quieres eliminar el proyecto '{p.Nombre}'?");
-
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Seguro que quieres eliminar el proyecto '{p.Nombre}'?");
         if (!confirmar) return;
 
         mensajeOk = null;
@@ -279,19 +371,47 @@
 
         dialogError = null;
         proyectoSeleccionado = p;
-        pruebasProyecto = new List<PruebaModel>();
-        pruebaSeleccionadaCodigo = null;
+
+        participantesDisponibles = new();
+        participanteSeleccionadoEmail = null;
+
+        fraganciasProyecto = new();
+        fraganciaSeleccionadaCodigo = null;
 
         try
         {
-            // ✅ Esto debe devolver ParticipanteEmail (para mostrar)
-            //    y ParticipanteCodigo (para navegar)
-            pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(p.Codigo);
+            var emailActual = UserSession.Email;
+            if (string.IsNullOrWhiteSpace(emailActual))
+            {
+                mensajeError = "No se ha podido obtener el usuario actual. Vuelve a iniciar sesión.";
+                return;
+            }
+
+            var creador = emailActual.Trim().ToLower();
+
+            // 1) Fragancias asociadas al proyecto
+            var rels = await EProyectoFragancia.ListarFraganciasPorProyectoAsync(p.Codigo);
+            var todasFragancias = await EFragancia.ListarFraganciasPorCreadorAsync(creador);
+
+            var codigosFragProyecto = rels.Select(r => r.FraganciaCodigo).ToHashSet();
+
+            fraganciasProyecto = todasFragancias
+                .Where(f => codigosFragProyecto.Contains(f.Codigo))
+                .OrderBy(f => f.Nombre)
+                .ToList();
+
+            // 2) Si hay varias fragancias, selecciona una por defecto (IMPORTANTÍSIMO para no pasar NULL)
+            if (fraganciasProyecto.Count > 1)
+                fraganciaSeleccionadaCodigo = fraganciasProyecto[0].Codigo;
+
+            // 3) Recarga disponibles con el filtro correcto
+            await RecargarParticipantesDisponiblesAsync();
+
             empezarDialogVisible = true;
         }
         catch (Exception ex)
         {
-            mensajeError = "Error cargando participantes del proyecto: " + ex.Message;
+            mensajeError = "Error cargando datos para empezar: " + ex.Message;
         }
     }
 
@@ -299,21 +419,91 @@
     {
         empezarDialogVisible = false;
         proyectoSeleccionado = null;
-        pruebasProyecto = new();
-        pruebaSeleccionadaCodigo = null;
+
+        participantesDisponibles = new();
+        participanteSeleccionadoEmail = null;
+
+        fraganciasProyecto = new();
+        fraganciaSeleccionadaCodigo = null;
+
         dialogError = null;
         empezarBusy = false;
+    }
+
+    private void AbrirPopupNuevoParticipante()
+    {
+        dialogError = null;
+        dialogoParticipanteVisible = true;
+    }
+
+    private void AbrirDialogoResultados(ProyectoModel p)
+    {
+        proyectoSeleccionado = p;
+        resultadosDialogVisible = true;
+    }
+
+    private async Task RecargarParticipantesDisponiblesAsync()
+    {
+        if (proyectoSeleccionado == null) return;
+
+        var creador = (UserSession.Email ?? "").Trim().ToLower();
+        if (string.IsNullOrWhiteSpace(creador)) return;
+
+        // Si hay varias fragancias => SIEMPRE filtrar por la seleccionada
+        string? fragFiltro = null;
+
+        if ((fraganciasProyecto?.Count ?? 0) > 1)
+        {
+            if (string.IsNullOrWhiteSpace(fraganciaSeleccionadaCodigo))
+            {
+                participantesDisponibles = new();
+                return;
+            }
+
+            fragFiltro = fraganciaSeleccionadaCodigo.Trim();
+        }
+        else
+        {
+            // 0 o 1 fragancia => según tu regla, no filtrar por fragancia
+            fragFiltro = null;
+        }
+
+        participantesDisponibles =
+            await EParticipante.ListarParticipantesDisponiblesPorProyectoAsync(
+                proyectoSeleccionado.Codigo,
+                creador,
+                fragFiltro
+            );
+    }
+
+    private async Task OnFraganciaCambiada(object _)
+    {
+        participanteSeleccionadoEmail = null;
+        await RecargarParticipantesDisponiblesAsync();
+    }
+
+    private async Task OnParticipanteCreado(string email)
+    {
+        try
+        {
+            // Autoseleccionar el recién creado
+            var emailNorm = (email ?? "").Trim().ToLower();
+            if (!string.IsNullOrWhiteSpace(emailNorm))
+                participanteSeleccionadoEmail = emailNorm;
+
+            await RecargarParticipantesDisponiblesAsync();
+
+            mensajeOk = $"Participante \"{emailNorm}\" creado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            dialogError = "Participante creado, pero no se pudo recargar la lista: " + ex.Message;
+        }
     }
 
     private async Task ConfirmarEmpezarPrueba()
     {
         dialogError = null;
-
-        if (string.IsNullOrWhiteSpace(pruebaSeleccionadaCodigo))
-        {
-            dialogError = "Selecciona un participante.";
-            return;
-        }
 
         if (proyectoSeleccionado == null)
         {
@@ -321,18 +511,21 @@
             return;
         }
 
-        var prueba = pruebasProyecto
-            .FirstOrDefault(x => x.Codigo == pruebaSeleccionadaCodigo);
-
-        if (prueba == null)
+        if (string.IsNullOrWhiteSpace(participanteSeleccionadoEmail))
         {
-            dialogError = "No se ha encontrado la prueba seleccionada.";
+            dialogError = "Selecciona un participante.";
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(prueba.ParticipanteEmail))
+        if ((fraganciasProyecto?.Count ?? 0) == 0)
         {
-            dialogError = "La prueba no tiene participante asociado (email vacío).";
+            dialogError = "Este proyecto no tiene fragancias asociadas.";
+            return;
+        }
+
+        if (fraganciasProyecto.Count > 1 && string.IsNullOrWhiteSpace(fraganciaSeleccionadaCodigo))
+        {
+            dialogError = "Selecciona una fragancia.";
             return;
         }
 
@@ -340,14 +533,30 @@
 
         try
         {
-            await EPrueba.ActualizarFechaPruebaAsync(prueba.Codigo);
+            var email = participanteSeleccionadoEmail.Trim().ToLower();
 
-            var participanteEncoded = Uri.EscapeDataString(prueba.ParticipanteEmail);
-            var pruebaEncoded = Uri.EscapeDataString(prueba.Codigo);
+            // Si hay varias, usa la seleccionada; si hay 1, usa esa 
+            var fraganciaCod = (fraganciasProyecto.Count > 1)
+                ? fraganciaSeleccionadaCodigo!.Trim()
+                : fraganciasProyecto[0].Codigo;
 
-            Nav.NavigateTo(
-                $"/prueba/{proyectoSeleccionado.Codigo}/{participanteEncoded}?pruebaCodigo={pruebaEncoded}"
-            );
+            // Crea la prueba 
+            var pruebaCodigo = await EPrueba.CrearPruebaAsync(proyectoSeleccionado.Codigo, email, fraganciaCod);
+
+            if (string.IsNullOrWhiteSpace(pruebaCodigo))
+                throw new Exception("No se ha podido crear la prueba (código vacío).");
+
+            await EPrueba.ActualizarFechaPruebaAsync(pruebaCodigo);
+
+            var participanteEncoded = Uri.EscapeDataString(email);
+            var pruebaEncoded = Uri.EscapeDataString(pruebaCodigo);
+            var fraganciaEncoded = Uri.EscapeDataString(fraganciaCod);
+
+            Nav.NavigateTo($"/prueba/{proyectoSeleccionado.Codigo}/{participanteEncoded}?pruebaCodigo={pruebaEncoded}&fraganciaCodigo={fraganciaEncoded}");
+        }
+        catch (PostgresException ex)
+        {
+            dialogError = ex.MessageText;
         }
         catch (Exception ex)
         {
@@ -356,6 +565,7 @@
         finally
         {
             empezarBusy = false;
+            await RecargarParticipantesDisponiblesAsync();
         }
     }
 
@@ -363,7 +573,7 @@
     {
         try
         {
-            await ExportService.DescargarCsvAsync(proyectos, "proyectos.csv");
+            await ExportService.DescargarCsvAsync(proyectos, "Proyectos.csv");
         }
         catch (Exception ex)
         {
@@ -371,56 +581,8 @@
         }
     }
 
-
-    // RESULTADOS
-
-    // RESULTADOS (ahora lo maneja el componente)
-    private bool resultadosDialogVisible = false;
-    private ProyectoModel? proyectoResultados;
-
-    private void AbrirDialogoResultados(ProyectoModel p)
-    {
-        proyectoResultados = p;
-        resultadosDialogVisible = true;
-    }
-
-
-    private void CerrarDialogoResultados()
-    {
-        proyectoResultados = null;
-        busyResultados = false;
-    }
-
-    private async Task DescargarResultadosCsv()
-    {
-        if (proyectoResultados == null) return;
-
-        try
-        {
-            var csv = await EResultado.GenerarCsvResultadosProyectoAsync(proyectoResultados.Codigo);
-
-            await JS.InvokeVoidAsync(
-                "downloadHelper.downloadText",
-                $"resultados_{proyectoResultados.Codigo}.csv",
-                csv
-            );
-        }
-        catch (Exception ex)
-        {
-            resultadosDialogError = "Error generando CSV: " + ex.Message;
-        }
-    }
-
-
-    private void AbrirEstadisticas()
-    {
-        if (proyectoResultados == null) return;
-        Nav.NavigateTo($"/estadisticas/{proyectoResultados.Codigo}");
-    }
-
     private async Task DescargarProyecto(ProyectoModel p)
     {
-        await ExportService.DescargarCsvAsync(new[] { p }, $"Proyecto_{p.Codigo}.csv");
+        await ExportService.DescargarCsvAsync(new[] { p }, $"ResumenProyecto_{p.Codigo}.csv");
     }
-
 }

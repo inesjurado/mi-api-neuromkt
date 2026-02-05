@@ -1,13 +1,15 @@
 @page "/prueba/{ProyectoCodigo}/{ParticipanteEmail}"
 
 @using NeuromktApi.Services
+@using NeuromktApi.Models
+
 @inject NavigationManager Nav
 @inject UserSession UserSession
 @inject IEParticipante EParticipante
+@inject IEFragancia EFragancia
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -16,21 +18,20 @@
         </RadzenCard>
     </div>
 
-    <!-- Contenido -->
     <div class="nf-test-row">
 
-        <!-- Tarjeta principal con el texto de bienvenida -->
         <RadzenCard Class="nf-table-card nf-test-main">
             <div class="nf-test-main-inner">
                 <h2>Bienvenido</h2>
+
                 @if (!string.IsNullOrWhiteSpace(codigoParticipante))
                 {
                     <p><strong>Código participante:</strong> @codigoParticipante</p>
                 }
+
                 <p>Vas a oler una fragancia.</p>
                 <p>Tómate 10 segundos para percibirla.</p>
                 <p>Después, selecciona el color y la palabra que mejor la representen.</p>
-
 
                 <div class="nf-form-actions" style="margin-top:1.5rem;">
                     <RadzenButton Text="Siguiente"
@@ -49,28 +50,35 @@
     [Parameter] public string ProyectoCodigo { get; set; } = default!;
     [Parameter] public string ParticipanteEmail { get; set; } = default!;
 
-
     [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
     public string? PruebaCodigo { get; set; }
 
+    [Parameter, SupplyParameterFromQuery(Name = "fraganciaCodigo")]
+    public string? FraganciaCodigo { get; set; }
+
     private string? codigoParticipante;
+    private string? fraganciaNombre;
 
     protected override async Task OnInitializedAsync()
     {
-        // ParticipanteEmail viene URL-encoded, lo normalizamos
         var email = Uri.UnescapeDataString(ParticipanteEmail).Trim().ToLower();
-
         codigoParticipante = await EParticipante.ObtenerCodigoPorEmailAsync(email);
-    }
 
+        var fragCod = (FraganciaCodigo ?? string.Empty).Trim();
+        if (!string.IsNullOrWhiteSpace(fragCod))
+        {
+            var frag = await EFragancia.ObtenerFraganciaAsync(fragCod);
+            fraganciaNombre = frag?.Nombre ?? fragCod;
+        }
+    }
 
     private void IrASiguiente()
     {
         var pruebaEncoded = Uri.EscapeDataString(PruebaCodigo ?? string.Empty);
+        var fraganciaEncoded = Uri.EscapeDataString(FraganciaCodigo ?? string.Empty);
 
         Nav.NavigateTo(
-            $"/prueba/{ProyectoCodigo}/{ParticipanteEmail}/seleccion?pruebaCodigo={pruebaEncoded}"
+            $"/prueba/{ProyectoCodigo}/{ParticipanteEmail}/seleccion?pruebaCodigo={pruebaEncoded}&fraganciaCodigo={fraganciaEncoded}"
         );
-
     }
 }

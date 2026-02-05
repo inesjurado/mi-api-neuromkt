@@ -1,4 +1,3 @@
-// Services/EUsuario.cs
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -54,8 +53,6 @@ namespace NeuromktApi.Services
         public async Task<List<UsuarioModel>> ListarUsuariosAsync()
         {
             var lista = new List<UsuarioModel>();
-
-            // Usamos la conexión de EF Core
             var conn = _db.Database.GetDbConnection();
 
             try
@@ -63,13 +60,11 @@ namespace NeuromktApi.Services
                 await conn.OpenAsync();
 
                 using var cmd = conn.CreateCommand();
-                // Ajusta el esquema/nombre si tu función se llama distinto
                 cmd.CommandText = "SELECT * FROM neuromkt.l_usuarios();";
 
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    // Asumimos que NUNCA hay NULL en estas columnas
                     var usuario = new UsuarioModel
                     {
                         Email  = (string)reader["email"],
@@ -95,7 +90,6 @@ namespace NeuromktApi.Services
 
         public async Task ActualizarUsuarioAsync(UsuarioModel u, bool? activo = null)
         {
-            // Orden de parámetros: (p_email, p_nombre, p_rol, p_activo, p_password)
             var sql = @"
                 SELECT neuromkt.u_usuario(
                     CAST(@p_email    AS varchar),
@@ -109,20 +103,20 @@ namespace NeuromktApi.Services
 
             var pNombre = new NpgsqlParameter("@p_nombre",
                 string.IsNullOrWhiteSpace(u.Nombre)
-                    ? (object)DBNull.Value   // NULL -> no toca el nombre
+                    ? (object)DBNull.Value   
                     : u.Nombre);
 
             var pRol = new NpgsqlParameter("@p_rol",
                 string.IsNullOrWhiteSpace(u.Rol)
-                    ? (object)DBNull.Value   // NULL -> no toca el rol
+                    ? (object)DBNull.Value   
                     : u.Rol);
 
             var pActivo = new NpgsqlParameter("@p_activo",
-                (object?)activo ?? DBNull.Value);      // NULL -> no toca activo
+                (object?)activo ?? DBNull.Value);    
 
             var pPassword = new NpgsqlParameter("@p_password",
                 string.IsNullOrWhiteSpace(u.Password)
-                    ? (object)DBNull.Value   // NULL -> no toca password_hash
+                    ? (object)DBNull.Value   
                     : u.Password);
 
             var parametros = new[] { pEmail, pNombre, pRol, pActivo, pPassword };

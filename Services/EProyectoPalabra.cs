@@ -36,7 +36,7 @@ namespace NeuromktApi.Services
 
             var pProyecto = new NpgsqlParameter("@p_proyecto_codigo", proyectoCodigo.Trim());
             var pPalabra  = new NpgsqlParameter("@p_palabra", palabra.Trim());
-            var pCodigo   = new NpgsqlParameter("@p_codigo", DBNull.Value); // que genere PP<n>
+            var pCodigo   = new NpgsqlParameter("@p_codigo", DBNull.Value); 
 
             try
             {
@@ -75,7 +75,7 @@ namespace NeuromktApi.Services
                     {
                         Codigo  = reader.GetString(0),
                         Palabra = reader.GetString(1),
-                        ProyectoCodigo = proyectoCodigo   // si tu modelo tiene esta propiedad
+                        ProyectoCodigo = proyectoCodigo  
                     });
                 }
 

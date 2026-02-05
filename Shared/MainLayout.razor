@@ -1,19 +1,20 @@
 @inherits LayoutComponentBase
+
+@using NeuromktApi.Models
+@using NeuromktApi.Services
+@using NeuromktApi.Pages
+@using NeuromktApi.Shared
+
 @inject NavigationManager NavigationManager
 @inject UserSession UserSession
-@using NeuromktApi.Models
-@using NeuromktApi.Pages
-@using NeuromktApi.Services
 @inject IEUsuario EUsuario
 
 <RadzenLayout Style="min-height:100vh;">
-    <RadzenSidebar 
-        @bind-Expanded="@sidebarExpanded"
-        Media="(max-width: 992px)"
-        Style="width:260px;">
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded"
+                   Media="(max-width: 992px)"
+                   Style="width:260px;">
         <div class="sidebar-content">
             <RadzenPanelMenu>
-                @* Solo ADMIN *@
                 @if (IsAdmin)
                 {
                     <RadzenPanelMenuItem Text="Proyectos" Path="/proyectos" Icon="list" />
@@ -21,48 +22,41 @@
                     <RadzenPanelMenuItem Text="Configuracion" Path="/configuracion" Icon="settings" />
                 }
 
-                @* Solo INVESTIGADOR *@
                 @if (IsInvestigador)
                 {
                     <RadzenPanelMenuItem Text="Proyectos" Path="/investProyecto" Icon="assignment" />
                     <RadzenPanelMenuItem Text="Fragancias" Path="/investFragancias" Icon="science" />
                     <RadzenPanelMenuItem Text="Participantes" Path="/investParticipante" Icon="people" />
                 }
-
             </RadzenPanelMenu>
+
             <div class="sidebar-footer">
-                <img src="images/MACOM.png"
-                    alt="MACOM"
-                    class="sidebar-macom-logo" />
+                <img src="images/MACOM_BLANCO.png"
+                     alt="MACOM"
+                     class="sidebar-macom-logo" />
 
                 <RadzenButton Text="Cerrar sesión"
-                            Icon="logout"
-                            ButtonStyle="ButtonStyle.Danger"
-                            Style="width:100%;"
-                            Click="@Logout" />
+                              Icon="logout"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Style="width:100%;"
+                              Click="@Logout" />
             </div>
         </div>
     </RadzenSidebar>
 
     <RadzenBody>
         <RadzenTopBar>
-            <ChildContent>
-                <div class="nf-topbar">
-                    <div class="nf-topbar-left">
-                        <RadzenSidebarToggle Click="@ToggleSidebar" Class="nf-topbar-toggle" />
-
-                        <span class="rz-toolbar-title ml-2">
-                            NEUROFRAGANCIAS (@UserSession.Role)
-                        </span>
-                    </div>
-
-                    <div class="nf-user-header-click"
-                             style="cursor:pointer;"
-                             @onclick="EditarPerfilPropio">
-                            <UserHeaderCard />
-                    </div>
+            <div class="nf-topbar">
+                <div class="nf-topbar-left">
+                    <RadzenSidebarToggle Click="@ToggleSidebar" Class="nf-topbar-toggle" />
                 </div>
-            </ChildContent>
+
+                <div class="nf-user-header-click"
+                     style="cursor:pointer;"
+                     @onclick="AbrirPopupPerfil">
+                    <UserHeaderCard />
+                </div>
+            </div>
         </RadzenTopBar>
 
         <div class="p-4">
@@ -71,61 +65,87 @@
     </RadzenBody>
 </RadzenLayout>
 
-<UsuarioForm Visible="@perfilPopupVisible"
-             VisibleChanged="@(v => perfilPopupVisible = v)"
-             EsEdicion="true"
-             Usuario="@usuarioActual"
-             OnGuardado="@OnPerfilGuardado" />
+@if (perfilPopupVisible)
+{
+    <div class="nf-modal-backdrop" @onclick="CerrarPopupPerfil">
+        <RadzenCard Class="nf-modal-card" @onclick:stopPropagation="true">
+            <div class="nf-modal-header">
+                <span>Editar perfil</span>
+                <button type="button"
+                        class="nf-modal-close"
+                        @onclick="CerrarPopupPerfil">
+                    ✕
+                </button>
+            </div>
+
+            <UsuarioForm Visible="@perfilPopupVisible"
+                         VisibleChanged="@OnPerfilVisibleChanged"
+                         EsEdicion="true"
+                         Usuario="@usuarioActual"
+                         OnGuardado="@OnPerfilGuardado" />
+        </RadzenCard>
+    </div>
+}
 
 @code {
-    bool sidebarExpanded = true;
+    private bool sidebarExpanded = true;
 
-    bool IsAdmin => UserSession.Role == "Administrador";
-    bool IsInvestigador => UserSession.Role == "Investigador";
+    private bool IsAdmin =>
+        string.Equals(UserSession?.Role, "Administrador", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsInvestigador =>
+        string.Equals(UserSession?.Role, "Investigador", StringComparison.OrdinalIgnoreCase);
 
     private bool perfilPopupVisible = false;
     private UsuarioModel? usuarioActual;
     private bool cargandoPerfil = false;
 
+    private void ToggleSidebar() => sidebarExpanded = !sidebarExpanded;
 
-    void ToggleSidebar()
+    private void Logout()
     {
-        sidebarExpanded = !sidebarExpanded;
-    }
-    void Logout()
-    {
-        // Si usas UserSession para el rol, lo limpiamos
         if (UserSession is not null)
         {
             UserSession.Role = null;
+            UserSession.Email = null;
         }
 
-        // Volver al login
-        NavigationManager.NavigateTo("/login");
+        NavigationManager.NavigateTo("/login", forceLoad: true);
     }
 
-    private async Task EditarPerfilPropio()
+    private async Task AbrirPopupPerfil()
+    {
+        perfilPopupVisible = true;
+        await InvokeAsync(StateHasChanged);
+        await CargarUsuarioActualAsync();
+    }
+
+    private async Task CerrarPopupPerfil()
+    {
+        perfilPopupVisible = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnPerfilVisibleChanged(bool v)
+    {
+        perfilPopupVisible = v;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CargarUsuarioActualAsync()
     {
         if (cargandoPerfil) return;
 
-        // Necesitamos el email del usuario actual
-        if (string.IsNullOrWhiteSpace(UserSession.Email))
-        {
-            // si quieres, aquí podrías mandar al login
-            NavigationManager.NavigateTo("/login");
+        var email = UserSession?.Email;
+        if (string.IsNullOrWhiteSpace(email))
             return;
-        }
 
         cargandoPerfil = true;
 
         try
         {
-            usuarioActual = await EUsuario.ObtenerUsuarioAsync(UserSession.Email);
-            perfilPopupVisible = true;
-        }
-        catch (Exception)
-        {
-            // aquí podrías loguear algo o mostrar un mensaje global si quisieras
+            usuarioActual = await EUsuario.ObtenerUsuarioAsync(email.Trim().ToLower());
+            await InvokeAsync(StateHasChanged);
         }
         finally
         {
@@ -133,10 +153,9 @@
         }
     }
 
-    private void OnPerfilGuardado(string email)
+    private async Task OnPerfilGuardado(string email)
     {
-        // Si quieres, aquí podrías refrescar UserSession (rol, nombre, etc.)
-        // De momento solo cerramos el popup
         perfilPopupVisible = false;
+        await InvokeAsync(StateHasChanged);
     }
 }

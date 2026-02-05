@@ -93,7 +93,6 @@
             return;
         }
 
-        // Llamamos a la función de Supabase a través del servicio
         var (ok, rol) = await EUsuario.LoginAsync(Email!, Password!);
 
         if (!ok || string.IsNullOrEmpty(rol))
@@ -104,9 +103,8 @@
 
         // Guardamos en la sesión
         UserSession.Role = rol;
-        UserSession.Email = Email; // si tienes esta propiedad en UserSession
+        UserSession.Email = Email; 
 
-        // Redirigimos según el rol devuelto por la función
         if (rol == "Administrador")
         {
             NavigationManager.NavigateTo("/proyectos");

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using NeuromktApi.Models;
 using Npgsql;
 using NpgsqlTypes;
@@ -12,26 +12,29 @@ namespace NeuromktApi.Services
     public interface IEParticipante
     {
         Task<List<ParticipanteModel>> ListarParticipantesPorCreadorAsync(string creadoPor);
-        Task<string> CrearParticipanteAsync(ParticipanteModel participante);   // 👈 CAMBIO
+        Task<List<ParticipanteModel>> ListarParticipantesDisponiblesPorProyectoAsync(string proyectoCodigo, string creadoPor, string? fraganciaCodigo = null);
+        Task<string> CrearParticipanteAsync(ParticipanteModel participante);
         Task ActualizarParticipanteAsync(string email, ParticipanteModel participante);
         Task EliminarParticipanteAsync(string email);
         Task<string?> ObtenerCodigoPorEmailAsync(string email);
-
     }
 
     public class EParticipante : IEParticipante
     {
         private readonly AppDbContext _db;
+        private readonly string _cs;
 
-        public EParticipante(AppDbContext db)
+        public EParticipante(AppDbContext db, IConfiguration cfg)
         {
             _db = db;
+            _cs = cfg.GetConnectionString("DefaultConnection")
+                  ?? throw new Exception("Falta ConnectionString 'DefaultConnection' en appsettings.json");
         }
 
         // ==========================
         // INSERTAR PARTICIPANTE
         // ==========================
-        public async Task<string> CrearParticipanteAsync(ParticipanteModel participante) // 👈 CAMBIO
+        public async Task<string> CrearParticipanteAsync(ParticipanteModel participante)
         {
             const string sql = @"
                 SELECT neuromkt.i_participante(
@@ -43,47 +46,41 @@ namespace NeuromktApi.Services
                     p_creado_por        => :p_creado_por
                 );
             ";
-
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen)
-                await conn.OpenAsync();
+            var wasOpen = conn.State == System.Data.ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
 
             try
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                // que genere U<n>
-                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value);
+                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value); 
 
                 if (string.IsNullOrWhiteSpace(participante.Email))
                     throw new Exception("El email del participante viene vacío al servicio.");
 
                 cmd.Parameters.AddWithValue("p_email", participante.Email.Trim().ToLower());
 
-                // fecha_nacimiento DATE
                 cmd.Parameters.Add("p_fecha_nacimiento", NpgsqlDbType.Date).Value =
                     participante.FechaNacimiento.HasValue
                         ? participante.FechaNacimiento.Value.Date
                         : DBNull.Value;
 
-                // género opcional
                 cmd.Parameters.AddWithValue("p_genero",
                     string.IsNullOrWhiteSpace(participante.Genero)
                         ? (object)DBNull.Value
                         : participante.Genero.Trim());
 
-                // notas opcional
                 cmd.Parameters.AddWithValue("p_notas",
                     string.IsNullOrWhiteSpace(participante.Notas)
                         ? (object)DBNull.Value
                         : participante.Notas.Trim());
 
-                // creado_por obligatorio
                 if (string.IsNullOrWhiteSpace(participante.CreadoPor))
                     throw new Exception("Falta CreadoPor (usuario logeado) para crear el participante.");
 
                 cmd.Parameters.AddWithValue("p_creado_por", participante.CreadoPor.Trim().ToLower());
+
                 var result = await cmd.ExecuteScalarAsync();
                 return Convert.ToString(result) ?? string.Empty;
             }
@@ -94,22 +91,19 @@ namespace NeuromktApi.Services
             }
             finally
             {
-                if (!wasOpen)
-                    await conn.CloseAsync();
+                if (!wasOpen) await conn.CloseAsync();
             }
         }
 
         // ==========================
-        // LISTAR POR CREADOR
+        // LISTAR POR CREADOR 
         // ==========================
         public async Task<List<ParticipanteModel>> ListarParticipantesPorCreadorAsync(string creadoPor)
         {
             var lista = new List<ParticipanteModel>();
 
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen)
-                await conn.OpenAsync();
+            await using var conn = new NpgsqlConnection(_cs);
+            await conn.OpenAsync();
 
             try
             {
@@ -142,10 +136,63 @@ namespace NeuromktApi.Services
                 Console.WriteLine($"[Postgres] {ex.MessageText}");
                 throw;
             }
-            finally
+
+            return lista;
+        }
+
+        // ==========================
+        // DISPONIBLES PARA PROYECTO+FRAGANCIA
+        // ==========================
+        public async Task<List<ParticipanteModel>> ListarParticipantesDisponiblesPorProyectoAsync(
+            string proyectoCodigo,
+            string creadoPor,
+            string? fraganciaCodigo = null)
+        {
+            if (string.IsNullOrWhiteSpace(proyectoCodigo))
+                throw new ArgumentException("proyectoCodigo vacío", nameof(proyectoCodigo));
+
+            if (string.IsNullOrWhiteSpace(creadoPor))
+                throw new ArgumentException("creadoPor vacío", nameof(creadoPor));
+
+            var lista = new List<ParticipanteModel>();
+
+            await using var conn = new NpgsqlConnection(_cs);
+            await conn.OpenAsync();
+
+            try
             {
-                if (!wasOpen)
-                    await conn.CloseAsync();
+                await using var cmd = conn.CreateCommand();
+
+                cmd.CommandText = @"
+                    SELECT email, codigo
+                    FROM neuromkt.f_participantes_disponibles_proyecto(
+                        @p_proyecto_codigo,
+                        @p_creado_por,
+                        @p_fragancia_codigo
+                    )
+                    ORDER BY email;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue("@p_creado_por", creadoPor.Trim().ToLower());
+                cmd.Parameters.AddWithValue("@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? (object)DBNull.Value : fraganciaCodigo.Trim());
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ParticipanteModel
+                    {
+                        Email = reader["email"] as string ?? string.Empty,
+                        Codigo = reader["codigo"] as string ?? string.Empty,
+                        CreadoPor = creadoPor.Trim().ToLower()
+                    });
+                }
+            }
+            catch (PostgresException ex)
+            {
+                Console.WriteLine($"[Postgres] {ex.MessageText}");
+                throw;
             }
 
             return lista;
@@ -191,7 +238,7 @@ namespace NeuromktApi.Services
         }
 
         // ==========================
-        // ELIMINAR PARTICIPANTE
+        // ELIMINAR PARTICIPANTE 
         // ==========================
         public async Task EliminarParticipanteAsync(string email)
         {
@@ -210,27 +257,32 @@ namespace NeuromktApi.Services
             }
         }
 
-
+        // ==========================
+        // OBTENER CÓDIGO POR EMAIL 
+        // ==========================
         public async Task<string?> ObtenerCodigoPorEmailAsync(string email)
         {
-            const string sql = @"SELECT neuromkt.f_participante_codigo_por_email(:p_email);";
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
 
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen) await conn.OpenAsync();
+            const string sql = @"SELECT neuromkt.f_participante_codigo_por_email(@p_email);";
+
+            await using var conn = new NpgsqlConnection(_cs);
+            await conn.OpenAsync();
 
             try
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p_email", email.Trim().ToLower());
+                cmd.Parameters.AddWithValue("@p_email", email.Trim().ToLower());
+
                 var result = await cmd.ExecuteScalarAsync();
                 return result == null || result == DBNull.Value ? null : Convert.ToString(result);
             }
-            finally
+            catch (PostgresException ex)
             {
-                if (!wasOpen) await conn.CloseAsync();
+                Console.WriteLine($"[Postgres] {ex.MessageText}");
+                throw;
             }
         }
-
     }
 }

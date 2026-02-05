@@ -1,6 +1,7 @@
 @page "/estadisticas/{CodigoProyecto}"
 @using NeuromktApi.Services
 @inject IEResultado EResultado
+@inject IEProyectoFragancia EProyectoFragancia
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
@@ -15,76 +16,78 @@
 
     <RadzenCard Class="nf-table-card" Style="margin-top:2rem;">
 
-        <!-- BARRA SUPERIOR -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-            <!-- IZQUIERDA -->
-            <RadzenButton Icon="arrow_back"
-                          Text="Volver"
-                          ButtonStyle="ButtonStyle.Light"
-                          Click="@Volver" />
-
-            <!-- CENTRO: selectors -->
-            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;">
-                
-                <!-- ===== COLORES ===== -->
-                <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <span style="font-weight:600;">Colores:</span>
-
-                    <RadzenDropDown TValue="string"
-                                    Data="@_modos"
-                                    @bind-Value="_modoColores"
-                                    Style="min-width:180px;"
-                                    Change="@OnModoColoresChanged" />
-
-                    @if (_modoColores != "General")
-                    {
-                        <span style="font-weight:600; margin-left:0.35rem;">
-                            @(_modoColores == "Por género" ? "Género:" : "Edad:")
-                        </span>
-
-                        <RadzenDropDown TValue="string"
-                                        Data="@_gruposColoresDisponibles"
-                                        @bind-Value="_grupoColoresSeleccionado"
-                                        Style="min-width:200px;"
-                                        Change="@OnGrupoColoresChanged"
-                                        Placeholder="Selecciona..." />
-                    }
-                </div>
-
-                <!-- ===== PALABRAS ===== -->
-                <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <span style="font-weight:600;">Palabras:</span>
-
-                    <RadzenDropDown TValue="string"
-                                    Data="@_modos"
-                                    @bind-Value="_modoPalabras"
-                                    Style="min-width:180px;"
-                                    Change="@OnModoPalabrasChanged" />
-
-                    @if (_modoPalabras != "General")
-                    {
-                        <span style="font-weight:600; margin-left:0.35rem;">
-                            @(_modoPalabras == "Por género" ? "Género:" : "Edad:")
-                        </span>
-
-                        <RadzenDropDown TValue="string"
-                                        Data="@_gruposPalabrasDisponibles"
-                                        @bind-Value="_grupoPalabrasSeleccionado"
-                                        Style="min-width:200px;"
-                                        Change="@OnGrupoPalabrasChanged"
-                                        Placeholder="Selecciona..." />
-                    }
-                </div>
-
+        <div style="
+            display:grid;
+            grid-template-columns:auto 1fr auto;
+            gap:12px;
+            align-items:center;
+            margin-bottom:1rem;
+        ">
+            <div style="display:flex; align-items:center;">
+                <RadzenButton Icon="arrow_back"
+                            Text="Volver"
+                            ButtonStyle="ButtonStyle.Light"
+                            Click="@Volver" />
             </div>
 
-            <!-- DERECHA -->
-            <RadzenButton Icon="picture_as_pdf"
-                          Text="Descargar PDF"
-                          ButtonStyle="ButtonStyle.Secondary"
-                          Disabled="@cargando"
-                          Click="@AbrirDialogoPdf" />
+            <div style="
+                display:flex;
+                flex-wrap:wrap;
+                align-items:center;
+                gap:12px;
+                min-width:0;
+            ">
+                @if (_mostrarSelectorFragancia)
+                {
+                    <div style="display:flex; align-items:center; gap:8px; min-width:240px; flex:1 1 240px;">
+                        <span style="font-weight:600; white-space:nowrap;">Fragancia:</span>
+                        <RadzenDropDown TValue="string"
+                                        Data="@_fraganciasDisponibles"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        @bind-Value="_fraganciaCodigoSeleccionada"
+                                        Style="width:100%;"
+                                        Change="@OnFraganciaChanged" />
+                    </div>
+                }
+
+                <div style="display:flex; align-items:center; gap:8px; min-width:220px; flex:1 1 220px;">
+                    <span style="font-weight:600; white-space:nowrap;">Vista:</span>
+                    <RadzenDropDown TValue="string"
+                                    Data="@_modos"
+                                    @bind-Value="_modoFiltro"
+                                    Style="width:100%;"
+                                    Change="@OnModoFiltroChanged" />
+                </div>
+
+                @if (_modoFiltro != "General")
+                {
+                    <div style="display:flex; align-items:center; gap:8px; min-width:240px; flex:1 1 240px;">
+                        <span style="font-weight:600; white-space:nowrap;">
+                            @(_modoFiltro == "Por género" ? "Género:" : "Edad:")
+                        </span>
+
+                        <RadzenDropDown TValue="string"
+                                        Data="@_gruposDisponibles"
+                                        @bind-Value="_grupoFiltroSeleccionado"
+                                        Style="width:100%;"
+                                        Change="@OnGrupoFiltroChanged"
+                                        Placeholder="Selecciona..." />
+                    </div>
+                }
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; align-items:center;">
+                <RadzenButton Icon="picture_as_pdf"
+                            Text="Descargar PDF"
+                            ButtonStyle="ButtonStyle.Secondary"
+                            Disabled="@cargando"
+                            Click="@AbrirDialogoPdf"
+                            Style="white-space:nowrap;" />
+            </div>
         </div>
+        <div style="display:none;"></div>
+
 
         @if (!string.IsNullOrEmpty(mensajeError))
         {
@@ -101,9 +104,9 @@
         {
             <h4 style="margin-top:1rem;">Colores</h4>
 
-            @if (_modoColores != "General" && (_gruposColoresDisponibles == null || _gruposColoresDisponibles.Count == 0))
+            @if (_modoFiltro != "General" && (_gruposDisponibles == null || _gruposDisponibles.Count == 0))
             {
-                <div>No hay datos para esta vista de colores.</div>
+                <div>No hay datos para esta vista.</div>
             }
             else if (statsColores.Count == 0)
             {
@@ -118,12 +121,12 @@
 
                     <!-- Leyenda personalizada (color real) -->
                     <div>
-                        @if (_modoColores != "General" && !string.IsNullOrWhiteSpace(_grupoColoresSeleccionado))
+                        @if (_modoFiltro != "General" && !string.IsNullOrWhiteSpace(_grupoFiltroSeleccionado))
                         {
                             <div style="font-weight:700; margin-bottom:0.75rem;">
-                                @(_modoColores == "Por género"
-                                    ? $"Género: {_grupoColoresSeleccionado}"
-                                    : $"Edad: {_grupoColoresSeleccionado}")
+                                @(_modoFiltro == "Por género"
+                                    ? $"Género: {_grupoFiltroSeleccionado}"
+                                    : $"Edad: {_grupoFiltroSeleccionado}")
                             </div>
                         }
 
@@ -141,9 +144,9 @@
 
             <h4 style="margin-top:2rem;">Palabras</h4>
 
-            @if (_modoPalabras != "General" && (_gruposPalabrasDisponibles == null || _gruposPalabrasDisponibles.Count == 0))
+            @if (_modoFiltro != "General" && (_gruposDisponibles == null || _gruposDisponibles.Count == 0))
             {
-                <div>No hay datos para esta vista de palabras.</div>
+                <div>No hay datos para esta vista.</div>
             }
             else if (statsPalabras.Count == 0)
             {
@@ -158,12 +161,12 @@
 
                     <!-- leyenda simple para palabras -->
                     <div>
-                        @if (_modoPalabras != "General" && !string.IsNullOrWhiteSpace(_grupoPalabrasSeleccionado))
+                        @if (_modoFiltro != "General" && !string.IsNullOrWhiteSpace(_grupoFiltroSeleccionado))
                         {
                             <div style="font-weight:700; margin-bottom:0.75rem;">
-                                @(_modoPalabras == "Por género"
-                                    ? $"Género: {_grupoPalabrasSeleccionado}"
-                                    : $"Edad: {_grupoPalabrasSeleccionado}")
+                                @(_modoFiltro == "Por género"
+                                    ? $"Género: {_grupoFiltroSeleccionado}"
+                                    : $"Edad: {_grupoFiltroSeleccionado}")
                             </div>
                         }
 
@@ -195,6 +198,20 @@
             </div>
 
             <div class="nf-dialog-form">
+
+                @if (_mostrarSelectorFragancia)
+                {
+                    <div class="nf-form-field">
+                        <label>Fragancia</label>
+                        <RadzenDropDown TValue="string"
+                                        Data="@_pdfFraganciasDisponibles"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        @bind-Value="_pdfFraganciaCodigo"
+                                        Style="width:100%;"
+                                        Change="@OnPdfFraganciaChanged" />
+                    </div>
+                }
 
                 <div class="nf-form-field">
                     <label>Modo</label>
@@ -241,7 +258,6 @@
     </div>
 }
 
-
 @code {
     [Parameter] public string CodigoProyecto { get; set; } = string.Empty;
 
@@ -257,14 +273,18 @@
     {
         public string Valor { get; set; } = string.Empty;
         public int Total { get; set; }
-
         public string CssColor => (Valor ?? "").Trim().Replace(" ", "");
+    }
+
+    private class Opcion
+    {
+        public string Text { get; set; } = "";
+        public string Value { get; set; } = "";
     }
 
     private List<StatRow> statsColores = new();
     private List<StatRow> statsPalabras = new();
 
-    // ====== JS arrays ======
     private string[] _labelsColores = Array.Empty<string>();
     private int[] _valuesColores = Array.Empty<int>();
     private string[] _colorsColores = Array.Empty<string>();
@@ -273,25 +293,18 @@
     private int[] _valuesPalabras = Array.Empty<int>();
     private string[] _colorsPalabras = Array.Empty<string>();
 
-    // ====== MODOS ======
     private readonly List<string> _modos = new() { "General", "Por género", "Por edad" };
+    private string _modoFiltro = "General";
 
-    private string _modoColores = "General";
-    private string _modoPalabras = "General";
+    private string? _grupoFiltroSeleccionado;
+    private List<string> _gruposDisponibles = new();
 
-    // ====== COLORES agrupados ======
-    private Dictionary<string, List<StatRow>> _coloresPorGenero = new();
-    private Dictionary<string, List<StatRow>> _coloresPorEdad = new();
-    private string? _grupoColoresSeleccionado;
-    private List<string> _gruposColoresDisponibles = new();
+    private bool _mostrarSelectorFragancia = false;
+    private List<Opcion> _fraganciasDisponibles = new();
+    private string _fraganciaCodigoSeleccionada = ""; 
 
-    // ====== PALABRAS agrupadas ======
-    private Dictionary<string, List<StatRow>> _palabrasPorGenero = new();
-    private Dictionary<string, List<StatRow>> _palabrasPorEdad = new();
-    private string? _grupoPalabrasSeleccionado;
-    private List<string> _gruposPalabrasDisponibles = new();
-
-    // ===== PDF DIALOG =====
+    private string? FraganciaOrNull()
+        => string.IsNullOrWhiteSpace(_fraganciaCodigoSeleccionada) ? null : _fraganciaCodigoSeleccionada;
     private bool _pdfDialogVisible = false;
     private bool _pdfBusy = false;
     private string? _pdfError;
@@ -301,9 +314,12 @@
     private List<string> _pdfGruposDisponibles = new();
     private string? _pdfGrupoSeleccionado;
 
+    private List<Opcion> _pdfFraganciasDisponibles = new();
+    private string _pdfFraganciaCodigo = "";
 
     protected override async Task OnInitializedAsync()
     {
+        await PrepararFraganciasAsync();
         await CargarTodoAsync();
     }
 
@@ -313,7 +329,6 @@
         {
             _chartsRendered = true;
 
-            // PIE colores
             if (_labelsColores.Length > 0)
             {
                 await JS.InvokeVoidAsync("nfCharts.renderPie",
@@ -321,12 +336,11 @@
                     _labelsColores,
                     _valuesColores,
                     _colorsColores,
-                    _modoColores == "General"
+                    _modoFiltro == "General"
                         ? "Colores"
-                        : $"Colores ({_grupoColoresSeleccionado})");
+                        : $"Colores ({_grupoFiltroSeleccionado})");
             }
 
-            // BAR palabras
             if (_labelsPalabras.Length > 0)
             {
                 await JS.InvokeVoidAsync("nfCharts.renderBar",
@@ -334,11 +348,45 @@
                     _labelsPalabras,
                     _valuesPalabras,
                     _colorsPalabras,
-                    _modoPalabras == "General"
+                    _modoFiltro == "General"
                         ? "Palabras"
-                        : $"Palabras ({_grupoPalabrasSeleccionado})");
+                        : $"Palabras ({_grupoFiltroSeleccionado})");
             }
         }
+    }
+
+    private async Task PrepararFraganciasAsync()
+    {
+        var filas = await EProyectoFragancia.ListarFraganciasPorProyectoAsync(CodigoProyecto);
+
+        var opciones = filas
+            .Where(x => !string.IsNullOrWhiteSpace(x.FraganciaCodigo))
+            .Select(x => new Opcion
+            {
+                Value = x.FraganciaCodigo,
+                Text  = string.IsNullOrWhiteSpace(x.FraganciaNombre) ? x.FraganciaCodigo : x.FraganciaNombre
+            })
+            .GroupBy(o => o.Value) 
+            .Select(g => g.First())
+            .OrderBy(o => o.Text)
+            .ToList();
+
+        _mostrarSelectorFragancia = opciones.Count >= 2;
+
+        _fraganciasDisponibles = opciones;
+        _fraganciaCodigoSeleccionada = _fraganciasDisponibles.FirstOrDefault()?.Value ?? "";
+    }
+
+
+    private async Task OnFraganciaChanged(object value)
+    {
+        _fraganciaCodigoSeleccionada = value?.ToString() ?? "";
+
+        _grupoFiltroSeleccionado = null;
+        _gruposDisponibles = new();
+
+        await CargarTodoAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task CargarTodoAsync()
@@ -352,6 +400,7 @@
 
         try
         {
+            await PrepararGruposFiltroAsync();
             await CargarColoresAsync();
             await CargarPalabrasAsync();
         }
@@ -365,62 +414,79 @@
         }
     }
 
-    // ===================== COLORES =====================
+    private async Task PrepararGruposFiltroAsync()
+    {
+        if (_modoFiltro == "General")
+        {
+            _gruposDisponibles = new();
+            _grupoFiltroSeleccionado = null;
+            return;
+        }
+
+        var frag = FraganciaOrNull();
+
+        if (_modoFiltro == "Por género")
+        {
+            var filasC = await EResultado.EstadisticasColoresPorGeneroAsync(CodigoProyecto, frag);
+            var filasP = await EResultado.EstadisticasPalabrasPorGeneroAsync(CodigoProyecto, frag);
+
+            _gruposDisponibles = filasC.Select(x => x.UsuarioEmail)
+                .Concat(filasP.Select(x => x.UsuarioEmail))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            _grupoFiltroSeleccionado ??= _gruposDisponibles.FirstOrDefault();
+        }
+        else // Por edad
+        {
+            var filasC = await EResultado.EstadisticasColoresPorEdadAsync(CodigoProyecto, frag);
+            var filasP = await EResultado.EstadisticasPalabrasPorEdadAsync(CodigoProyecto, frag);
+
+            _gruposDisponibles = filasC.Select(x => x.UsuarioEmail)
+                .Concat(filasP.Select(x => x.UsuarioEmail))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            _grupoFiltroSeleccionado ??= _gruposDisponibles.FirstOrDefault();
+        }
+    }
+
     private async Task CargarColoresAsync()
     {
-        if (_modoColores == "General")
+        var frag = FraganciaOrNull();
+
+        if (_modoFiltro == "General")
         {
-            var colores = await EResultado.EstadisticasColoresProyectoAsync(CodigoProyecto);
+            var colores = await EResultado.EstadisticasColoresProyectoAsync(CodigoProyecto, frag);
 
             statsColores = colores
-                .Select(x => new StatRow { Valor = x.ColorHex, Total = x.Total })
+                .Select(x => new StatRow { Valor = x.Valor ?? "", Total = x.Total })
                 .OrderByDescending(x => x.Total)
                 .ToList();
-
-            _gruposColoresDisponibles = new();
-            _grupoColoresSeleccionado = null;
-            _coloresPorGenero = new();
-            _coloresPorEdad = new();
         }
-        else if (_modoColores == "Por género")
+        else if (_modoFiltro == "Por género")
         {
-            var filas = await EResultado.EstadisticasColoresPorGeneroAsync(CodigoProyecto);
+            var filas = await EResultado.EstadisticasColoresPorGeneroAsync(CodigoProyecto, frag);
 
-            _coloresPorGenero = filas
-                .GroupBy(x => x.Genero)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(r => new StatRow { Valor = r.ColorHex, Total = r.Total })
-                          .OrderByDescending(r => r.Total)
-                          .ToList()
-                );
-
-            _gruposColoresDisponibles = _coloresPorGenero.Keys.OrderBy(x => x).ToList();
-            _grupoColoresSeleccionado ??= _gruposColoresDisponibles.FirstOrDefault();
-
-            statsColores = (_grupoColoresSeleccionado != null && _coloresPorGenero.ContainsKey(_grupoColoresSeleccionado))
-                ? _coloresPorGenero[_grupoColoresSeleccionado]
-                : new List<StatRow>();
+            statsColores = filas
+                .Where(x => x.UsuarioEmail == _grupoFiltroSeleccionado)
+                .Select(r => new StatRow { Valor = r.Valor ?? "", Total = r.Total })
+                .OrderByDescending(r => r.Total)
+                .ToList();
         }
         else // Por edad
         {
-            var filas = await EResultado.EstadisticasColoresPorEdadAsync(CodigoProyecto);
+            var filas = await EResultado.EstadisticasColoresPorEdadAsync(CodigoProyecto, frag);
 
-            _coloresPorEdad = filas
-                .GroupBy(x => x.RangoEdad)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(r => new StatRow { Valor = r.ColorHex, Total = r.Total })
-                          .OrderByDescending(r => r.Total)
-                          .ToList()
-                );
-
-            _gruposColoresDisponibles = _coloresPorEdad.Keys.OrderBy(x => x).ToList();
-            _grupoColoresSeleccionado ??= _gruposColoresDisponibles.FirstOrDefault();
-
-            statsColores = (_grupoColoresSeleccionado != null && _coloresPorEdad.ContainsKey(_grupoColoresSeleccionado))
-                ? _coloresPorEdad[_grupoColoresSeleccionado]
-                : new List<StatRow>();
+            statsColores = filas
+                .Where(x => x.UsuarioEmail == _grupoFiltroSeleccionado)
+                .Select(r => new StatRow { Valor = r.Valor ?? "", Total = r.Total })
+                .OrderByDescending(r => r.Total)
+                .ToList();
         }
 
         _labelsColores = statsColores.Select(x => x.Valor).ToArray();
@@ -428,97 +494,38 @@
         _colorsColores = statsColores.Select(x => x.CssColor).ToArray();
     }
 
-    private async Task OnModoColoresChanged(object value)
-    {
-        _modoColores = value?.ToString() ?? "General";
-        _grupoColoresSeleccionado = null;
-        _gruposColoresDisponibles = new();
-
-        await CargarTodoAsync();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnGrupoColoresChanged(object value)
-    {
-        _grupoColoresSeleccionado = value?.ToString();
-
-        if (_modoColores == "Por género")
-        {
-            statsColores = (_grupoColoresSeleccionado != null && _coloresPorGenero.ContainsKey(_grupoColoresSeleccionado))
-                ? _coloresPorGenero[_grupoColoresSeleccionado]
-                : new List<StatRow>();
-        }
-        else if (_modoColores == "Por edad")
-        {
-            statsColores = (_grupoColoresSeleccionado != null && _coloresPorEdad.ContainsKey(_grupoColoresSeleccionado))
-                ? _coloresPorEdad[_grupoColoresSeleccionado]
-                : new List<StatRow>();
-        }
-
-        _labelsColores = statsColores.Select(x => x.Valor).ToArray();
-        _valuesColores = statsColores.Select(x => x.Total).ToArray();
-        _colorsColores = statsColores.Select(x => x.CssColor).ToArray();
-
-        _chartsRendered = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    // ===================== PALABRAS =====================
     private async Task CargarPalabrasAsync()
     {
-        if (_modoPalabras == "General")
+        var frag = FraganciaOrNull();
+
+        if (_modoFiltro == "General")
         {
-            var palabras = await EResultado.EstadisticasPalabrasProyectoAsync(CodigoProyecto);
+            var palabras = await EResultado.EstadisticasPalabrasProyectoAsync(CodigoProyecto, frag);
 
             statsPalabras = palabras
-                .Select(x => new StatRow { Valor = x.Palabra, Total = x.Total })
+                .Select(x => new StatRow { Valor = x.Valor ?? "", Total = x.Total })
                 .OrderByDescending(x => x.Total)
                 .ToList();
-
-            _gruposPalabrasDisponibles = new();
-            _grupoPalabrasSeleccionado = null;
-            _palabrasPorGenero = new();
-            _palabrasPorEdad = new();
         }
-        else if (_modoPalabras == "Por género")
+        else if (_modoFiltro == "Por género")
         {
-            var filas = await EResultado.EstadisticasPalabrasPorGeneroAsync(CodigoProyecto);
+            var filas = await EResultado.EstadisticasPalabrasPorGeneroAsync(CodigoProyecto, frag);
 
-            _palabrasPorGenero = filas
-                .GroupBy(x => x.Genero)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(r => new StatRow { Valor = r.Palabra, Total = r.Total })
-                          .OrderByDescending(r => r.Total)
-                          .ToList()
-                );
-
-            _gruposPalabrasDisponibles = _palabrasPorGenero.Keys.OrderBy(x => x).ToList();
-            _grupoPalabrasSeleccionado ??= _gruposPalabrasDisponibles.FirstOrDefault();
-
-            statsPalabras = (_grupoPalabrasSeleccionado != null && _palabrasPorGenero.ContainsKey(_grupoPalabrasSeleccionado))
-                ? _palabrasPorGenero[_grupoPalabrasSeleccionado]
-                : new List<StatRow>();
+            statsPalabras = filas
+                .Where(x => x.UsuarioEmail == _grupoFiltroSeleccionado)
+                .Select(r => new StatRow { Valor = r.Valor ?? "", Total = r.Total })
+                .OrderByDescending(r => r.Total)
+                .ToList();
         }
         else // Por edad
         {
-            var filas = await EResultado.EstadisticasPalabrasPorEdadAsync(CodigoProyecto);
+            var filas = await EResultado.EstadisticasPalabrasPorEdadAsync(CodigoProyecto, frag);
 
-            _palabrasPorEdad = filas
-                .GroupBy(x => x.RangoEdad)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(r => new StatRow { Valor = r.Palabra, Total = r.Total })
-                          .OrderByDescending(r => r.Total)
-                          .ToList()
-                );
-
-            _gruposPalabrasDisponibles = _palabrasPorEdad.Keys.OrderBy(x => x).ToList();
-            _grupoPalabrasSeleccionado ??= _gruposPalabrasDisponibles.FirstOrDefault();
-
-            statsPalabras = (_grupoPalabrasSeleccionado != null && _palabrasPorEdad.ContainsKey(_grupoPalabrasSeleccionado))
-                ? _palabrasPorEdad[_grupoPalabrasSeleccionado]
-                : new List<StatRow>();
+            statsPalabras = filas
+                .Where(x => x.UsuarioEmail == _grupoFiltroSeleccionado)
+                .Select(r => new StatRow { Valor = r.Valor ?? "", Total = r.Total })
+                .OrderByDescending(r => r.Total)
+                .ToList();
         }
 
         _labelsPalabras = statsPalabras.Select(x => x.Valor).ToArray();
@@ -526,42 +533,27 @@
         _colorsPalabras = GenerarColores(statsPalabras.Count);
     }
 
-    private async Task OnModoPalabrasChanged(object value)
+    private async Task OnModoFiltroChanged(object value)
     {
-        _modoPalabras = value?.ToString() ?? "General";
-        _grupoPalabrasSeleccionado = null;
-        _gruposPalabrasDisponibles = new();
+        _modoFiltro = value?.ToString() ?? "General";
+        _grupoFiltroSeleccionado = null;
+        _gruposDisponibles = new();
 
         await CargarTodoAsync();
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnGrupoPalabrasChanged(object value)
+    private async Task OnGrupoFiltroChanged(object value)
     {
-        _grupoPalabrasSeleccionado = value?.ToString();
+        _grupoFiltroSeleccionado = value?.ToString();
 
-        if (_modoPalabras == "Por género")
-        {
-            statsPalabras = (_grupoPalabrasSeleccionado != null && _palabrasPorGenero.ContainsKey(_grupoPalabrasSeleccionado))
-                ? _palabrasPorGenero[_grupoPalabrasSeleccionado]
-                : new List<StatRow>();
-        }
-        else if (_modoPalabras == "Por edad")
-        {
-            statsPalabras = (_grupoPalabrasSeleccionado != null && _palabrasPorEdad.ContainsKey(_grupoPalabrasSeleccionado))
-                ? _palabrasPorEdad[_grupoPalabrasSeleccionado]
-                : new List<StatRow>();
-        }
-
-        _labelsPalabras = statsPalabras.Select(x => x.Valor).ToArray();
-        _valuesPalabras = statsPalabras.Select(x => x.Total).ToArray();
-        _colorsPalabras = GenerarColores(statsPalabras.Count);
+        await CargarColoresAsync();
+        await CargarPalabrasAsync();
 
         _chartsRendered = false;
         await InvokeAsync(StateHasChanged);
     }
 
-    // ===================== HELPERS =====================
     private static string[] GenerarColores(int n)
     {
         if (n <= 0) return Array.Empty<string>();
@@ -574,6 +566,23 @@
         return res;
     }
 
+    private string FraganciaNombreSeleccionada()
+    {
+        if (!_mostrarSelectorFragancia) return "";
+        return _fraganciasDisponibles
+            .FirstOrDefault(x => x.Value == _fraganciaCodigoSeleccionada)?.Text
+            ?? _fraganciaCodigoSeleccionada;
+    }
+
+    private string PdfFraganciaNombreSeleccionada()
+    {
+        if (!_mostrarSelectorFragancia) return "";
+        return _pdfFraganciasDisponibles
+            .FirstOrDefault(x => x.Value == _pdfFraganciaCodigo)?.Text
+            ?? _pdfFraganciaCodigo;
+    }
+
+
     private async Task DescargarPdf()
     {
         try
@@ -582,12 +591,15 @@
             var idPalabras = "piePalabras";
 
             var fileName = $"estadisticas_{CodigoProyecto}.pdf";
-            var sufijo = _modoColores == "General"
-                ? "General"
-                : $"{_modoColores}: {(_modoColores == "Por género" ? _grupoColoresSeleccionado : _grupoColoresSeleccionado)}";
 
-            var title = $"Estadísticas – {CodigoProyecto} ({sufijo})";
+            var nombreFrag = _mostrarSelectorFragancia ? FraganciaNombreSeleccionada() : "";
+            var sufijoFrag = string.IsNullOrWhiteSpace(nombreFrag) ? "" : $" ({nombreFrag})";
 
+            var sufijoModo = _modoFiltro == "General"
+                ? " (General)"
+                : $" ({_modoFiltro}: {_grupoFiltroSeleccionado})";
+
+            var title = $"Estadísticas – {CodigoProyecto}{sufijoFrag}{sufijoModo}";
 
             await JS.InvokeVoidAsync("nfCharts.exportChartsPdf",
                 fileName,
@@ -617,13 +629,15 @@
         _pdfError = null;
         _pdfBusy = false;
 
-        // modo inicial = el que estés viendo ahora (si quieres) o General
-        _pdfModo = _modoColores; // como colores y palabras van sincronizados, nos vale este
+        // sincroniza valores iniciales con la vista
+        _pdfModo = _modoFiltro;
         if (!_pdfModos.Contains(_pdfModo))
             _pdfModo = "General";
 
-        await PrepararGruposPdfAsync();
+        _pdfFraganciasDisponibles = _fraganciasDisponibles?.ToList() ?? new List<Opcion>();
+        _pdfFraganciaCodigo = _fraganciaCodigoSeleccionada ?? "";
 
+        await PrepararGruposPdfAsync();
         _pdfDialogVisible = true;
     }
 
@@ -632,6 +646,16 @@
         _pdfDialogVisible = false;
         _pdfError = null;
         _pdfBusy = false;
+    }
+
+    private async Task OnPdfFraganciaChanged(object value)
+    {
+        _pdfFraganciaCodigo = value?.ToString() ?? "";
+        _pdfGrupoSeleccionado = null;
+        _pdfGruposDisponibles = new();
+
+        await PrepararGruposPdfAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnPdfModoChanged(object value)
@@ -645,7 +669,6 @@
 
     private async Task PrepararGruposPdfAsync()
     {
-        // si es General no hay grupos
         if (_pdfModo == "General")
         {
             _pdfGruposDisponibles = new();
@@ -653,14 +676,15 @@
             return;
         }
 
-        // necesitamos cargar grupos según el modo elegido (reutilizamos tus funciones)
+        string? frag = string.IsNullOrWhiteSpace(_pdfFraganciaCodigo) ? null : _pdfFraganciaCodigo;
+
         if (_pdfModo == "Por género")
         {
-            var filasC = await EResultado.EstadisticasColoresPorGeneroAsync(CodigoProyecto);
-            var filasP = await EResultado.EstadisticasPalabrasPorGeneroAsync(CodigoProyecto);
+            var filasC = await EResultado.EstadisticasColoresPorGeneroAsync(CodigoProyecto, frag);
+            var filasP = await EResultado.EstadisticasPalabrasPorGeneroAsync(CodigoProyecto, frag);
 
-            var grupos = filasC.Select(x => x.Genero)
-                .Concat(filasP.Select(x => x.Genero))
+            var grupos = filasC.Select(x => x.UsuarioEmail)
+                .Concat(filasP.Select(x => x.UsuarioEmail))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
@@ -671,11 +695,11 @@
         }
         else // Por edad
         {
-            var filasC = await EResultado.EstadisticasColoresPorEdadAsync(CodigoProyecto);
-            var filasP = await EResultado.EstadisticasPalabrasPorEdadAsync(CodigoProyecto);
+            var filasC = await EResultado.EstadisticasColoresPorEdadAsync(CodigoProyecto, frag);
+            var filasP = await EResultado.EstadisticasPalabrasPorEdadAsync(CodigoProyecto, frag);
 
-            var grupos = filasC.Select(x => x.RangoEdad)
-                .Concat(filasP.Select(x => x.RangoEdad))
+            var grupos = filasC.Select(x => x.UsuarioEmail)
+                .Concat(filasP.Select(x => x.UsuarioEmail))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .OrderBy(x => x)
@@ -689,7 +713,6 @@
     private async Task ConfirmarDescargarPdf()
     {
         _pdfError = null;
-
         if (_pdfBusy) return;
 
         if (_pdfModo != "General" && string.IsNullOrWhiteSpace(_pdfGrupoSeleccionado))
@@ -702,32 +725,17 @@
 
         try
         {
-            // sincroniza modo para COLORES + PALABRAS
-            _modoColores = _pdfModo;
-            _modoPalabras = _pdfModo;
+            // sincroniza el filtro de la vista con el diálogo PDF
+            _fraganciaCodigoSeleccionada = _mostrarSelectorFragancia ? (_pdfFraganciaCodigo ?? "") : "";
+            _modoFiltro = _pdfModo;
+            _grupoFiltroSeleccionado = _pdfModo == "General" ? null : _pdfGrupoSeleccionado;
 
-            // sincroniza el grupo (usamos el mismo para ambos)
-            if (_pdfModo == "Por género")
-            {
-                _grupoColoresSeleccionado = _pdfGrupoSeleccionado;
-                _grupoPalabrasSeleccionado = _pdfGrupoSeleccionado;
-            }
-            else if (_pdfModo == "Por edad")
-            {
-                _grupoColoresSeleccionado = _pdfGrupoSeleccionado;
-                _grupoPalabrasSeleccionado = _pdfGrupoSeleccionado;
-            }
-            else
-            {
-                _grupoColoresSeleccionado = null;
-                _grupoPalabrasSeleccionado = null;
-            }
-
-            // recargar stats + forzar re-render de charts antes de exportar
             await CargarTodoAsync();
             await InvokeAsync(StateHasChanged);
+
             await JS.InvokeVoidAsync("nfCharts.waitTwoFrames");
             await DescargarPdf();
+
             CerrarDialogoPdf();
         }
         catch (Exception ex)
@@ -739,5 +747,4 @@
             _pdfBusy = false;
         }
     }
-
 }

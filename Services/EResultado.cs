@@ -13,15 +13,19 @@ namespace NeuromktApi.Services
         Task<string> CrearResultadoAsync(string pruebaCodigo, string colorHex, string palabra);
         Task<List<ResultadoModel>> ListarPorPruebaAsync(string pruebaCodigo);
         Task<string> GenerarCsvResultadosProyectoAsync(string proyectoCodigo);
-        Task<List<(string ColorHex, int Total)>> EstadisticasColoresProyectoAsync(string proyectoCodigo);
-        Task<List<(string Palabra, int Total)>> EstadisticasPalabrasProyectoAsync(string proyectoCodigo);
         Task<bool> ExistenResultadosParaPruebaAsync(string pruebaCodigo);
-        // COLORES
-        Task<List<(string ColorHex, string Genero, int Total)>> EstadisticasColoresPorGeneroAsync(string proyectoCodigo);
-        Task<List<(string ColorHex, string RangoEdad, int Total)>> EstadisticasColoresPorEdadAsync(string proyectoCodigo);
-        // PALABRAS
-        Task<List<(string Genero, string Palabra, int Total)>> EstadisticasPalabrasPorGeneroAsync(string proyectoCodigo);
-        Task<List<(string RangoEdad, string Palabra, int Total)>> EstadisticasPalabrasPorEdadAsync(string proyectoCodigo);
+
+        // General
+        Task<List<ResultadoModel>> EstadisticasColoresProyectoAsync(string proyectoCodigo, string? fraganciaCodigo = null);
+        Task<List<ResultadoModel>> EstadisticasPalabrasProyectoAsync(string proyectoCodigo, string? fraganciaCodigo = null);
+
+        // Genero
+        Task<List<ResultadoModel>> EstadisticasColoresPorGeneroAsync(string proyectoCodigo, string? fraganciaCodigo = null);
+        Task<List<ResultadoModel>> EstadisticasPalabrasPorGeneroAsync(string proyectoCodigo, string? fraganciaCodigo = null);
+
+        // Edad
+        Task<List<ResultadoModel>> EstadisticasColoresPorEdadAsync(string proyectoCodigo, string? fraganciaCodigo = null);
+        Task<List<ResultadoModel>> EstadisticasPalabrasPorEdadAsync(string proyectoCodigo, string? fraganciaCodigo = null);
     }
 
     public class EResultado : IEResultado
@@ -33,11 +37,6 @@ namespace NeuromktApi.Services
             _db = db;
         }
 
-        /// <summary>
-        /// Inserta un resultado en neuromkt.resultados usando la función neuromkt.i_resultado.
-        /// Asumimos firma: i_resultado(p_codigo, p_prueba_codigo, p_color_hex, p_palabra)
-        /// y que devuelve el código generado.
-        /// </summary>
         public async Task<string> CrearResultadoAsync(string pruebaCodigo, string colorHex, string palabra)
         {
             const string sql = @"
@@ -58,7 +57,7 @@ namespace NeuromktApi.Services
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value);                 // que genere RES<n> o similar
+                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value); 
                 cmd.Parameters.AddWithValue("p_prueba_codigo", pruebaCodigo.Trim());
                 cmd.Parameters.AddWithValue("p_color_hex", colorHex.Trim());
                 cmd.Parameters.AddWithValue("p_palabra", palabra.Trim());
@@ -78,9 +77,7 @@ namespace NeuromktApi.Services
             }
         }
 
-        /// <summary>
-        /// Devuelve los resultados de una prueba.
-        /// </summary>
+
         public async Task<List<ResultadoModel>> ListarPorPruebaAsync(string pruebaCodigo)
         {
             const string sql = @"
@@ -107,10 +104,10 @@ namespace NeuromktApi.Services
                 {
                     var r = new ResultadoModel
                     {
-                        Codigo       = reader.GetString(0),
+                        Codigo = reader.GetString(0),
                         PruebaCodigo = reader.GetString(1),
-                        ColorHex     = reader.GetString(2),
-                        Palabra      = reader.GetString(3)
+                        ColorHex = reader.GetString(2),
+                        Palabra = reader.GetString(3)
                     };
 
                     lista.Add(r);
@@ -129,7 +126,6 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
-
 
         public async Task<string> GenerarCsvResultadosProyectoAsync(string proyectoCodigo)
         {
@@ -152,7 +148,7 @@ namespace NeuromktApi.Services
                 while (await reader.ReadAsync())
                 {
                     var usuario = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                    var color   = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    var color = reader.IsDBNull(1) ? "" : reader.GetString(1);
                     var palabra = reader.IsDBNull(2) ? "" : reader.GetString(2);
 
                     sb.AppendLine($"{Csv(usuario)},{Csv(color)},{Csv(palabra)}");
@@ -167,73 +163,10 @@ namespace NeuromktApi.Services
 
             static string Csv(string value)
             {
-                // escapa comillas y separadores
                 value ??= "";
                 var mustQuote = value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r');
                 value = value.Replace("\"", "\"\"");
                 return mustQuote ? $"\"{value}\"" : value;
-            }
-        }
-
-
-        public async Task<List<(string ColorHex, int Total)>> EstadisticasColoresProyectoAsync(string proyectoCodigo)
-        {
-            const string sql = @"SELECT color_hex, total FROM neuromkt.f_estadisticas_colores_proyecto(@p);";
-            var lista = new List<(string ColorHex, int Total)>();
-
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen) await conn.OpenAsync();
-
-            try
-            {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim()); // <- SIN @ aquí
-
-                await using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var color = reader.GetString(0);
-                    var total = reader.GetInt32(1);
-                    lista.Add((color, total));
-                }
-
-                return lista;
-            }
-            finally
-            {
-                if (!wasOpen) await conn.CloseAsync();
-            }
-        }
-
-
-        public async Task<List<(string Palabra, int Total)>> EstadisticasPalabrasProyectoAsync(string proyectoCodigo)
-        {
-            const string sql = @"SELECT palabra, total FROM neuromkt.f_estadisticas_palabras_proyecto(@p);";
-            var lista = new List<(string Palabra, int Total)>();
-
-            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
-            var wasOpen = conn.State == ConnectionState.Open;
-            if (!wasOpen) await conn.OpenAsync();
-
-            try
-            {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim());
-
-                await using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var palabra = reader.GetString(0);
-                    var total   = reader.GetInt32(1);
-                    lista.Add((palabra, total));
-                }
-
-                return lista;
-            }
-            finally
-            {
-                if (!wasOpen) await conn.CloseAsync();
             }
         }
 
@@ -265,14 +198,9 @@ namespace NeuromktApi.Services
             }
         }
 
-        public async Task<List<(string ColorHex, string Genero, int Total)>> EstadisticasColoresPorGeneroAsync(string proyectoCodigo)
+        public async Task<List<ResultadoModel>> EstadisticasColoresProyectoAsync(string proyectoCodigo, string? fraganciaCodigo = null)
         {
-            const string sql = @"
-                SELECT color_hex, genero, total
-                FROM neuromkt.f_colores_por_genero(@p);
-            ";
-
-            var lista = new List<(string ColorHex, string Genero, int Total)>();
+            var lista = new List<ResultadoModel>();
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
@@ -280,35 +208,41 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim());
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT color_hex, total
+                    FROM neuromkt.f_estadisticas_colores_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY total DESC;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    lista.Add((
-                        reader.GetString(0), // color_hex
-                        reader.GetString(1), // genero
-                        reader.GetInt32(2)   // total
-                    ));
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "color",
+                        Valor = reader["color_hex"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
                 }
-
-                return lista;
             }
             finally
             {
                 if (!wasOpen) await conn.CloseAsync();
             }
+
+            return lista;
         }
 
-        public async Task<List<(string ColorHex, string RangoEdad, int Total)>> EstadisticasColoresPorEdadAsync(string proyectoCodigo)
+        public async Task<List<ResultadoModel>> EstadisticasPalabrasProyectoAsync(string proyectoCodigo, string? fraganciaCodigo = null)
         {
-            const string sql = @"
-                SELECT color_hex, rango_edad, total
-                FROM neuromkt.f_colores_por_edad(@p);
-            ";
-
-            var lista = new List<(string ColorHex, string RangoEdad, int Total)>();
+            var lista = new List<ResultadoModel>();
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
@@ -316,35 +250,41 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim());
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT palabra, total
+                    FROM neuromkt.f_estadisticas_palabras_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY total DESC;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    lista.Add((
-                        reader.GetString(0), // color_hex
-                        reader.GetString(1), // rango_edad
-                        reader.GetInt32(2)   // total
-                    ));
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "palabra",
+                        Valor = reader["palabra"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
                 }
-
-                return lista;
             }
             finally
             {
                 if (!wasOpen) await conn.CloseAsync();
             }
+
+            return lista;
         }
 
-        public async Task<List<(string Genero, string Palabra, int Total)>> EstadisticasPalabrasPorGeneroAsync(string proyectoCodigo)
+        public async Task<List<ResultadoModel>> EstadisticasColoresPorGeneroAsync(string proyectoCodigo, string? fraganciaCodigo = null)
         {
-            const string sql = @"
-                SELECT genero, palabra, total
-                FROM neuromkt.f_estadisticas_palabras_por_genero_proyecto(@p);
-            ";
-
-            var lista = new List<(string Genero, string Palabra, int Total)>();
+            var lista = new List<ResultadoModel>();
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
@@ -352,35 +292,42 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim());
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT genero, color_hex, total
+                    FROM neuromkt.f_estadisticas_colores_por_genero_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY genero, total DESC;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    var genero  = reader.IsDBNull(0) ? "Sin género" : reader.GetString(0);
-                    var palabra = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    var total   = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
-
-                    lista.Add((genero, palabra, total));
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "color",
+                        UsuarioEmail = reader["genero"] as string ?? "Sin género", // grupo
+                        Valor = reader["color_hex"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
                 }
-
-                return lista;
             }
             finally
             {
                 if (!wasOpen) await conn.CloseAsync();
             }
+
+            return lista;
         }
 
-        public async Task<List<(string RangoEdad, string Palabra, int Total)>> EstadisticasPalabrasPorEdadAsync(string proyectoCodigo)
+        public async Task<List<ResultadoModel>> EstadisticasPalabrasPorGeneroAsync(string proyectoCodigo, string? fraganciaCodigo = null)
         {
-            const string sql = @"
-                SELECT rango_edad, palabra, total
-                FROM neuromkt.f_estadisticas_palabras_por_edad_proyecto(@p);
-            ";
-
-            var lista = new List<(string RangoEdad, string Palabra, int Total)>();
+            var lista = new List<ResultadoModel>();
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
             var wasOpen = conn.State == ConnectionState.Open;
@@ -388,31 +335,123 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("p", proyectoCodigo.Trim());
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT genero, palabra, total
+                    FROM neuromkt.f_estadisticas_palabras_por_genero_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY genero, total DESC, palabra;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    var rango   = reader.IsDBNull(0) ? "Sin edad" : reader.GetString(0);
-                    var palabra = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    var total   = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
-
-                    lista.Add((rango, palabra, total));
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "palabra",
+                        UsuarioEmail = reader["genero"] as string ?? "Sin género", 
+                        Valor = reader["palabra"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
                 }
-
-                return lista;
             }
             finally
             {
                 if (!wasOpen) await conn.CloseAsync();
             }
+
+            return lista;
         }
 
+        public async Task<List<ResultadoModel>> EstadisticasColoresPorEdadAsync(string proyectoCodigo, string? fraganciaCodigo = null)
+        {
+            var lista = new List<ResultadoModel>();
 
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
 
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT rango_edad, color_hex, total
+                    FROM neuromkt.f_estadisticas_colores_por_edad_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY rango_edad, total DESC;
+                ";
 
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
 
-            
-    }   
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "color",
+                        UsuarioEmail = reader["rango_edad"] as string ?? "Sin edad", // grupo
+                        Valor = reader["color_hex"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
+                }
+            }
+            finally
+            {
+                if (!wasOpen) await conn.CloseAsync();
+            }
+
+            return lista;
+        }
+
+        public async Task<List<ResultadoModel>> EstadisticasPalabrasPorEdadAsync(string proyectoCodigo, string? fraganciaCodigo = null)
+        {
+            var lista = new List<ResultadoModel>();
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT rango_edad, palabra, total
+                    FROM neuromkt.f_estadisticas_palabras_por_edad_proyecto(@p_proyecto_codigo, @p_fragancia_codigo)
+                    ORDER BY rango_edad, total DESC, palabra;
+                ";
+
+                cmd.Parameters.AddWithValue("@p_proyecto_codigo", proyectoCodigo.Trim());
+                cmd.Parameters.AddWithValue(
+                    "@p_fragancia_codigo",
+                    string.IsNullOrWhiteSpace(fraganciaCodigo) ? DBNull.Value : fraganciaCodigo.Trim()
+                );
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ResultadoModel
+                    {
+                        Tipo = "palabra",
+                        UsuarioEmail = reader["rango_edad"] as string ?? "Sin edad", 
+                        Valor = reader["palabra"] as string ?? string.Empty,
+                        Total = reader["total"] is DBNull ? 0 : Convert.ToInt32(reader["total"])
+                    });
+                }
+            }
+            finally
+            {
+                if (!wasOpen) await conn.CloseAsync();
+            }
+
+            return lista;
+        }
+    }
 }

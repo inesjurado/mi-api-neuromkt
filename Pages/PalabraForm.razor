@@ -51,10 +51,8 @@
 
     [Parameter] public bool EsEdicion { get; set; }
 
-    // Cuando editas, viene la palabra original
     [Parameter] public string? PalabraOriginal { get; set; }
 
-    // Devuelvo la palabra creada/actualizada
     [Parameter] public EventCallback<string> OnGuardado { get; set; }
 
     private string texto = string.Empty;

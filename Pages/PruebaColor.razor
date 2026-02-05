@@ -16,40 +16,37 @@
         </RadzenCard>
     </div>
 
-    <!-- Tarjeta principal -->
     <div class="nf-test-row">
-        <div class="test-main-header">
-            <h2>¿Con qué color asocias la fragancia?</h2>
+        <RadzenCard Class="nf-table-card nf-test-main">
+            <div class="nf-test-main-inner">
+                <h2>¿Con qué color asocias la fragancia?</h2>
 
-            <!-- ✅ Quitado: no mostramos participante -->
-        </div>
+                <div class="test-color-grid">
+                    @foreach (var c in coloresProyecto)
+                    {
+                        var seleccionado = c.ColorHex == colorSeleccionadoHex;
+                        <button class="test-color-circle @(seleccionado ? "seleccionado" : "")"
+                                style="background-color:@c.ColorHex"
+                                @onclick="@(() => SeleccionarColor(c.ColorHex))"
+                                title="@c.ColorHex">
+                        </button>
+                    }
+                </div>
 
-        <!-- GRID DE COLORES -->
-        <div class="test-color-grid">
-            @foreach (var c in coloresProyecto)
-            {
-                var seleccionado = c.ColorHex == colorSeleccionadoHex;
-                <button class="test-color-circle @(seleccionado ? "seleccionado" : "")"
-                        style="background-color:@c.ColorHex"
-                        @onclick="@(() => SeleccionarColor(c.ColorHex))"
-                        title="@c.ColorHex">
-                </button>
-            }
-        </div>
+                <div class="test-footer-buttons">
+                    <RadzenButton Text="Atrás"
+                                Icon="skip_previous"
+                                ButtonStyle="ButtonStyle.Secondary"
+                                Click="@IrAtras" />
 
-        <!-- Botones -->
-        <div class="test-footer-buttons">
-            <RadzenButton Text="Atrás"
-                          Icon="skip_previous"
-                          ButtonStyle="ButtonStyle.Secondary"
-                          Click="@IrAtras" />
-
-            <RadzenButton Text="Siguiente"
-                          Icon="play_arrow"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Disabled="@string.IsNullOrEmpty(colorSeleccionadoHex)"
-                          Click="@IrASiguiente" />
-        </div>
+                    <RadzenButton Text="Siguiente"
+                                Icon="play_arrow"
+                                ButtonStyle="ButtonStyle.Primary"
+                                Disabled="@string.IsNullOrEmpty(colorSeleccionadoHex)"
+                                Click="@IrASiguiente" />
+                </div>
+            </div>
+        </RadzenCard>
     </div>
 </div>
 
@@ -57,7 +54,6 @@
     [Parameter] public string ProyectoCodigo { get; set; } = default!;
     [Parameter] public string ParticipanteEmail { get; set; } = default!;
 
-    // recogemos el código de prueba por query
     [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
     public string? PruebaCodigo { get; set; }
 
@@ -72,7 +68,6 @@
     private void SeleccionarColor(string hex)
     {
         colorSeleccionadoHex = hex;
-        // aquí más adelante podrás guardar en memoria o llamar a la API de resultados
     }
 
     private void IrAtras()

@@ -33,7 +33,6 @@ namespace NeuromktApi.Services
             var lista = datos?.ToList() ?? new List<T>();
             if (!lista.Any())
             {
-                // nada que exportar
                 return;
             }
 
@@ -44,10 +43,8 @@ namespace NeuromktApi.Services
 
             var sb = new StringBuilder();
 
-            // Cabecera
             sb.AppendLine(string.Join(separador, props.Select(p => Escapar(p.Name, separador))));
 
-            // Filas
             foreach (var item in lista)
             {
                 var valores = props.Select(p =>
@@ -66,7 +63,6 @@ namespace NeuromktApi.Services
 
         private static string Escapar(string value, string separador)
         {
-            // si lleva separador, comillas o saltos de línea, lo envolvemos entre comillas
             var necesitaComillas =
                 value.Contains(separador) ||
                 value.Contains("\"") ||

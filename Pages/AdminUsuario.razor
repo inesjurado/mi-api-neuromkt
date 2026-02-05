@@ -14,7 +14,6 @@
         </RadzenCard>
     </div>
 
-    <!-- Toolbar -->
     <div class="nf-toolbar">
         <RadzenButton Icon="person_add"
                       Text="Nuevo Perfil"
@@ -29,7 +28,6 @@
               Click="@DescargarUsuarios" />
     </div>
 
-    <!-- Mensajes -->
     @if (!string.IsNullOrEmpty(mensajeOk))
     {
         <RadzenAlert Severity="AlertSeverity.Success" Style="margin-bottom:1rem;">
@@ -44,7 +42,6 @@
         </RadzenAlert>
     }
 
-    <!-- Tabla -->
     <RadzenCard Class="nf-table-card">
         <RadzenDataGrid TItem="UsuarioModel"
                         Data="@usuarios"
@@ -104,8 +101,6 @@
     </RadzenCard>
 </RadzenCard>
 
-
-<!-- ==== Component popup ==== -->
 <UsuarioForm Visible="@popupVisible"
              VisibleChanged="@(v => popupVisible = v)"
              EsEdicion="@popupEsEdicion"
@@ -120,7 +115,6 @@
     private string? mensajeOk;
     private string? mensajeError;
 
-    // Estado del popup
     private bool popupVisible = false;
     private bool popupEsEdicion = false;
     private UsuarioModel? usuarioSeleccionado;
@@ -143,7 +137,6 @@
         }
     }
 
-    // ======== NUEVO =========
     private void NuevoUsuario()
     {
         popupEsEdicion = false;
@@ -153,7 +146,6 @@
         mensajeError = null;
     }
 
-    // ======== EDITAR =========
     private void EditarUsuario(UsuarioModel u)
     {
         popupEsEdicion = true;
@@ -171,7 +163,6 @@
             : $"Usuario {email} creado correctamente.";
     }
 
-    // ======== BORRAR =========
     private async Task BorrarUsuario(UsuarioModel usuario)
     {
         if (busy) return;

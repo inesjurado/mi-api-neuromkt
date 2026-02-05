@@ -93,22 +93,16 @@
 }
 
 @code {
-    // ===== Parámetros que controla el padre =====
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
     // true = editar, false = nuevo
     [Parameter] public bool EsEdicion { get; set; } = false;
 
-    // Datos para edición (puede ser null en modo nuevo)
     [Parameter] public ParticipanteModel? Participante { get; set; }
 
-    /// <summary>
-    /// Se dispara al crear/editar correctamente. Envía el email.
-    /// </summary>
     [Parameter] public EventCallback<string> OnGuardado { get; set; }
 
-    // ===== Estado interno =====
     private ParticipanteModel modelo = new();
     private string? EmailOriginal;
     private bool Busy = false;
@@ -126,7 +120,6 @@
         if (!Visible)
             return;
 
-        // Si es edición, copiamos datos del participante recibido
         if (EsEdicion && Participante != null)
         {
             modelo = new ParticipanteModel
@@ -140,7 +133,7 @@
         }
         else if (!EsEdicion)
         {
-            // Alta nueva: modelo vacío
+
             modelo = new ParticipanteModel();
             EmailOriginal = null;
         }
@@ -161,7 +154,6 @@
 
         var valido = true;
 
-        // EMAIL obligatorio + formato simple
         if (string.IsNullOrWhiteSpace(modelo.Email))
         {
             ErrorEmail = "El email es obligatorio.";
@@ -173,14 +165,11 @@
             valido = false;
         }
 
-        // GÉNERO obligatorio
         if (string.IsNullOrWhiteSpace(modelo.Genero))
         {
             ErrorGenero = "El género es obligatorio.";
             valido = false;
         }
-
-        // FECHA NACIMIENTO obligatoria
         if (!modelo.FechaNacimiento.HasValue)
         {
             ErrorFechaNacimiento = "La fecha de nacimiento es obligatoria.";

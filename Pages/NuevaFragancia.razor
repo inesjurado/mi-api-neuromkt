@@ -77,22 +77,16 @@
 }
 
 @code {
-    // ===== Parámetros que controla el padre =====
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
     // true = editar, false = nueva
     [Parameter] public bool EsEdicion { get; set; } = false;
 
-    // Datos para edición (null en modo alta)
     [Parameter] public FraganciaModel? Fragancia { get; set; }
 
-    /// <summary>
-    /// Se lanza al crear/editar correctamente. Envía el código de la fragancia.
-    /// </summary>
     [Parameter] public EventCallback<string> OnGuardado { get; set; }
 
-    // ===== Estado interno =====
     private FraganciaModel modelo = new();
     private string? CodigoOriginal;
     private bool Busy = false;
@@ -113,7 +107,7 @@
                 Nombre      = Fragancia.Nombre,
                 Proveedor   = Fragancia.Proveedor,
                 Descripcion = Fragancia.Descripcion,
-                CreadoPor   = Fragancia.CreadoPor   // por si quieres mostrarlo en algún sitio
+                CreadoPor   = Fragancia.CreadoPor   
             };
             CodigoOriginal = Fragancia.Codigo;
         }
@@ -155,7 +149,6 @@
 
         try
         {
-            // ===== obtener usuario actual (igual que en proyectos) =====
             var emailActual = UserSession.Email;
             if (string.IsNullOrWhiteSpace(emailActual))
             {
@@ -168,14 +161,12 @@
 
             if (!EsEdicion)
             {
-                // ALTA → asignamos CreadoPor automáticamente
                 modelo.CreadoPor = emailActual.Trim();
 
                 codigo = await EFragancia.CrearFraganciaAsync(modelo);
             }
             else
             {
-                // EDICIÓN → normalmente no cambiamos CreadoPor
                 var clave = CodigoOriginal ?? modelo.Codigo;
                 await EFragancia.ActualizarFraganciaAsync(clave, modelo);
                 codigo = clave;

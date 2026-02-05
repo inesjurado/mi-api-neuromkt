@@ -33,7 +33,6 @@
             if (string.IsNullOrWhiteSpace(local))
                 return "?";
 
-            // 👇 aquí el cambio importante
             var separadores = new[] { '.', '-', '_', ' ' };
             var partes = local.Split(separadores, StringSplitOptions.RemoveEmptyEntries);
 

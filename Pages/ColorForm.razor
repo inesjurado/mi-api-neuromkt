@@ -70,7 +70,6 @@
         }
         else if (!EsEdicion)
         {
-            // alta
             colorHex = ColorActual?.Hex ?? "#FF0000";
         }
     }
@@ -93,7 +92,6 @@
         {
             if (EsEdicion)
             {
-                // actualizar
                 if (ColorActual == null)
                 {
                     errorMsg = "Error interno: falta el color a editar.";
@@ -103,18 +101,17 @@
                 var nuevoModelo = new ColorModel
                 {
                     Hex = colorHex.Trim(),
-                    Nombre = ColorActual.Nombre   // mantenemos el nombre que ya tenía
+                    Nombre = ColorActual.Nombre   
                 };
 
                 await EColor.ActualizarColorAsync(ColorActual.Hex, nuevoModelo);
             }
             else
             {
-                // alta
+               
                 var modelo = new ColorModel
                 {
                     Hex = colorHex.Trim(),
-                    // Nombre es nullable en tu BD, lo dejamos vacío
                     Nombre = null
                 };
 

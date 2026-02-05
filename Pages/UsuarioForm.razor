@@ -97,21 +97,16 @@
 
 @code {
 
-    // ==== PARÁMETROS ====
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
     // true = edición, false = nuevo
     [Parameter] public bool EsEdicion { get; set; }
 
-    // El usuario que se edita (null en nuevo)
     [Parameter] public UsuarioModel? Usuario { get; set; }
 
-    // Devuelvo email del creado o editado
     [Parameter] public EventCallback<string> OnGuardado { get; set; }
 
-
-    // ==== ESTADO INTERNO ====
     private UsuarioModel ModeloInterno = new();
     private bool Busy = false;
 

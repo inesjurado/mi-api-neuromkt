@@ -1,0 +1,860 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+app {
+    display: block;
+    height: 100vh;
+}
+
+/* Fondo general */
+body {
+    background-color: #f5f5f5;
+}
+
+/* ======================= */
+/*      PANTALLA LOGIN     */
+/* ======================= */
+
+.login-page {
+    height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    position: relative;
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+.login-card {
+    width: 380px;
+    max-width: 100%;
+
+    /* 👇 fuerza la misma fuente “normal” en todo el login */
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Para que también afecte a todo lo de dentro (incluido Radzen) */
+.login-card * {
+    font-family: inherit;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-header h1 {
+    margin: 0;
+
+    /* 👇 MISMA tipografía que el resto (tipo PROYECTOS) */
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 1.7rem;
+    /* ajusta si quieres */
+    letter-spacing: 0.08em;
+    /* look “PROYECTOS” */
+    text-transform: uppercase;
+    color: #0f2e5d;
+    /* opcional, tu azul */
+}
+
+.login-header p {
+    margin: 0;
+    color: #666;
+    font-family: inherit;
+}
+
+.login-footer {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.login-footer a {
+    color: #3f51b5;
+    text-decoration: none;
+}
+
+
+.login-logo-img {
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+}
+
+.login-logo-macom .login-logo-img {
+    height: 110px;
+    /* 👈 ajusta aquí (100–120 suele quedar bien) */
+}
+
+
+.login-logo-upv {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+}
+
+.login-logo-macom {
+    position: absolute;
+    bottom: 1rem;
+    left: 1.5rem;
+}
+
+
+/* Contenedor del input + botón del ojo */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+/* Radzen genera un <input class="rz-inputtext"> dentro de la caja */
+.password-wrapper input.rz-inputtext {
+    border-radius: 999px;
+    /* forma pastilla */
+    padding-left: 1.1rem;
+    padding-right: 3rem;
+    /* hueco para el icono */
+    box-shadow: none;
+}
+
+/* Botón del ojo, dentro del campo */
+.password-toggle-pill {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: none;
+    background: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.password-toggle-pill:focus {
+    outline: none;
+}
+
+/* Icono de ojo */
+.password-toggle-pill .eye-icon {
+    width: 18px;
+    height: 18px;
+    stroke: #555;
+    stroke-width: 1.7;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+/* ======================= */
+/*      LAYOUT GENERAL     */
+/* ======================= */
+
+/* Hace que el contenido del sidebar sea una columna y el footer se vaya abajo */
+.sidebar-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Empuja el footer al fondo */
+.sidebar-footer {
+
+    margin-top: auto;
+    padding: 1rem;
+}
+
+/* Logo MACOM encima del botón */
+.sidebar-macom-logo {
+    display: block;
+    width: 100%;
+    max-width: 180px;
+    /* ajusta tamaño */
+    height: auto;
+    margin: 0 auto 0.75rem auto;
+    /* centrado + espacio con el botón */
+    object-fit: contain;
+    opacity: 0.95;
+}
+
+
+/* Página tipo Neurofragancia */
+.nf-page {
+    background: #dde2ee;
+    /* gris azulado de fondo */
+    padding: 2rem 3rem;
+}
+
+.nf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    /* separación entre título y otros bloques (si los hay) */
+    margin-bottom: 2rem;
+}
+
+/* El título ocupa todo el ancho disponible, sin margen extra */
+.nf-title-card {
+    flex: 1 1 auto;
+    margin-right: 0;
+    /* <-- quitamos este margen */
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+
+.nf-title-text {
+    text-align: center;
+    padding: 1rem 0;
+    font-weight: 600;
+}
+
+.nf-table-card {
+    background: #f8f1f8;
+    border-radius: 12px;
+    box-shadow: none;
+    padding: 1rem 1.5rem;
+}
+
+.nf-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.nf-form-field {
+    margin-bottom: 1.25rem !important;
+}
+
+/* ======================= */
+/*          MODALES        */
+/* ======================= */
+
+.nf-modal-backdrop {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 9999 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nf-modal-card {
+    width: 520px;
+    max-width: 95%;
+    border-radius: 16px;
+    z-index: 10000 !important;
+}
+
+.nf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.nf-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #1F2D3D !important;
+    opacity: 0.7;
+}
+
+.nf-modal-close:hover {
+    opacity: 1;
+}
+
+.nf-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nf-form-actions {
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+/* ======================= */
+/*    LISTAS DE COLORES    */
+/* ======================= */
+
+.nf-list {
+    margin-top: 1rem;
+    padding: 1.5rem 2rem;
+    background-color: #fefaff;
+    border-radius: 16px;
+}
+
+.nf-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e1d7ff;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+}
+
+/* Fila colores */
+.nf-color-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nf-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.nf-color-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.nf-color-name {
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.nf-color-hex {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* ColorPicker de los modales de color */
+.nf-color-picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0 0.5rem 0;
+}
+
+/* Ocultar input del colorpicker para que solo se vea el panel de color */
+.nf-color-picker-wrapper .rz-colorpicker-input {
+    display: none;
+}
+
+.nf-color-picker-wrapper .rz-colorpicker {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* ======================= */
+/*      MENSAJES ERROR     */
+/* ======================= */
+
+.nf-input-error {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #d32f2f;
+    /* rojo más marcado */
+}
+
+/* ======================= */
+/*   FILTROS DE FECHAS     */
+/* ======================= */
+
+.nf-fecha-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nf-fecha-rango {
+    display: flex;
+    margin-top: 0.25rem;
+}
+
+.filtro-fecha-box {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+    margin-top: 6px;
+    width: 170px;
+}
+
+/* =============================== */
+/*       TITULOS PRINCIPALES      */
+/* =============================== */
+
+/* Título grande de las páginas (nf-title-text) */
+.nf-title-text {
+    color: #083261 !important;
+    /* azul que me has pasado */
+    font-size: 1.6rem;
+    /* más grande */
+    font-weight: 700;
+    /* más “gordo” */
+    letter-spacing: 0.03em;
+}
+
+/* Títulos de modales y cabecera login en el mismo azul */
+.nf-modal-header span,
+.login-header h1 {
+    color: #083261 !important;
+}
+
+/* h1/h2/h3 generales en el mismo azul */
+h1,
+h2,
+h3 {
+    color: #083261;
+}
+
+/* =============================== */
+/*         ESTILO BOTONES         */
+/* =============================== */
+
+/* PRIMARY (rojo tipo captura) */
+button.rz-button.rz-primary {
+    background-color: #D22A2A !important;
+    border-color: #D22A2A !important;
+    color: #fff !important;
+}
+
+button.rz-button.rz-primary:hover:not(:disabled) {
+    background-color: #b82020 !important;
+    border-color: #b82020 !important;
+}
+
+/* SECONDARY (azul oscuro) */
+button.rz-button.rz-secondary {
+    background-color: #083261 !important;
+    border-color: #083261 !important;
+    /* azul oscuro */
+    color: #fff !important;
+}
+
+button.rz-button.rz-secondary:hover:not(:disabled) {
+    background-color: #e6edf7 !important;
+}
+
+/* LIGHT (neutro) */
+button.rz-button.rz-light {
+    background-color: #f2f2f7 !important;
+    color: #444 !important;
+    border-color: #ddd !important;
+}
+
+button.rz-button.rz-light:hover:not(:disabled) {
+    background-color: #e4e4ed !important;
+}
+
+/* Deshabilitados (cualquiera) */
+.rz-button:disabled,
+.rz-button[disabled] {
+    background-color: #b1b1b1 !important;
+    border-color: #b1b1b1 !important;
+    color: #eeeeee !important;
+    opacity: 0.7 !important;
+}
+
+
+/* =============================== */
+/* Barra superior del layout       */
+/* =============================== */
+/* Contenedor de toda la barra superior */
+.nf-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* izquierda ↔ derecha */
+    width: 100%;
+}
+
+/* Parte izquierda: botón hamburguesa + título */
+.nf-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nf-topbar-toggle {
+    margin-right: 0.25rem;
+}
+
+/* Parte derecha: tarjeta de usuario */
+.nf-topbar-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    /* por si acaso, pero con space-between ya vale */
+}
+
+
+.nf-topbar-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #083261;
+}
+
+/* Contenedor que coloca la tarjeta de usuario pegada a la derecha */
+.nf-topbar-user {
+    margin-left: auto;
+    /* empuja al extremo derecho */
+    display: flex;
+    align-items: center;
+}
+
+/* Tarjeta usuario (la misma que ya tenías) */
+.nf-user-card {
+    width: 260px;
+    background: #6e748f00;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+    padding: 0.75rem 1rem;
+}
+
+.nf-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #dde2ee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    color: #083261;
+}
+
+.nf-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nf-user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #083261;
+}
+
+.nf-user-role {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+
+/* =============================== */
+/* CONTENIDO PRUEBA                */
+/* =============================== */
+/* contenido principal */
+.test-content {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.test-welcome-card {
+    max-width: 650px;
+    width: 100%;
+    padding: 2rem 2.5rem;
+    border-radius: 1.8rem;
+    background: #f2ecf7;
+}
+
+.test-welcome-body h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.test-welcome-body p {
+    margin: 0.2rem 0;
+}
+
+.test-participant {
+    margin-top: 1.4rem;
+    font-size: 1.50rem;
+}
+
+.test-actions {
+    margin-top: 1.8rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
+/* Tarjeta principal (bienvenida) */
+.nf-test-main {
+    flex: 2;
+}
+
+/* ⬇️ centrar el contenido dentro de la tarjeta */
+.nf-test-main-inner {
+    padding: 1.5rem 2rem;
+    max-width: 650px;
+    /* ancho máximo del bloque de texto */
+    margin: 0 auto;
+    /* lo centra horizontalmente dentro de la card */
+}
+
+/* Título de la tarjeta de bienvenida */
+.nf-test-main-inner h2 {
+    font-size: 2rem;
+    /* antes era ~1.5–1.6rem; súbelo o bájalo a tu gusto */
+}
+
+/* Párrafos de la tarjeta de bienvenida */
+.nf-test-main-inner p {
+    font-size: 1rem;
+    /* 1rem = 16px aprox. Prueba 1.05rem o 1.1rem si quieres más grande */
+}
+
+
+/* ===== Layout general prueba (mismo que en el mock azul) ===== */
+
+.test-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem 3rem;
+    background: #dfe5f1;
+    box-sizing: border-box;
+}
+
+/* Cabecera: título + investigador */
+.test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.test-title-card {
+    flex: 1;
+    max-width: 600px;
+    text-align: center;
+    padding: 1rem 1.5rem;
+    border-radius: 999px;
+    background: #e8edf8;
+    font-weight: 500;
+}
+
+.test-invest-card {
+    min-width: 240px;
+    margin-left: 2rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 1rem;
+    background: #f5e9f4;
+}
+
+.test-invest-name {
+    font-weight: 600;
+}
+
+.test-invest-role {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Tarjeta principal */
+.test-main-card {
+    margin: 0 auto;
+    margin-top: 1rem;
+    max-width: 720px;
+    background: #f2ecf7;
+    border-radius: 1.8rem;
+    padding: 1.75rem 2.5rem 2.25rem;
+}
+
+.test-main-header h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.6rem;
+}
+
+.test-main-header p {
+    margin: 0.25rem 0;
+}
+
+.test-participant {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+}
+
+
+/* =============================== */
+/* PRUEBA  COLORES                 */
+/* =============================== */
+/* GRID de colores */
+.test-color-grid {
+    margin-top: 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem 2rem;
+    justify-items: center;
+}
+
+.test-color-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border 0.15s ease;
+}
+
+.test-color-circle:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.test-color-circle.seleccionado {
+    box-shadow: 0 0 0 4px white, 0 0 0 6px #1f3c88;
+}
+
+/* Botones de abajo */
+.test-footer-buttons {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Responsive básico */
+@media (max-width: 900px) {
+    .test-page {
+        padding: 1.5rem;
+    }
+
+    .test-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .test-title-card {
+        max-width: none;
+    }
+
+    .test-invest-card {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+
+    .test-color-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .test-color-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .test-color-circle {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+.test-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem 3rem;
+    background: #ffffff;
+    /* o simplemente elimina esta línea */
+    box-sizing: border-box;
+}
+
+
+
+
+/* ===== GRID de palabras (similar al grid de colores) ===== */
+
+.test-word-grid {
+    margin-top: 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 1.2rem 1.8rem;
+    justify-items: center;
+}
+
+/* Botón tipo “pastilla” */
+.test-word-pill {
+    min-width: 130px;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    border: none;
+    background: #6c7bbd;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.test-word-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    background: #5b6ab0;
+}
+
+.test-word-pill.seleccionado {
+    background: #38479b;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px #38479b;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .test-word-grid {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .test-word-grid {
+        grid-template-columns: repeat(1, minmax(140px, 1fr));
+        justify-items: stretch;
+    }
+
+    .test-word-pill {
+        width: 100%;
+    }
+}
+
+/* ====== FORZAR FONDO BLANCO EN TODO (RADZEN INCLUIDO) ====== */
+/* Fondo general de la aplicación */
+
+/* Tu “página” y cards en blanco */
+.nf-page {
+    background: #ffffff !important;
+}
+
+.nf-table-card {
+    background: #ffffff !important;
+}
+
+/* Icono cerrar modal ya está arriba con nf-modal-close */

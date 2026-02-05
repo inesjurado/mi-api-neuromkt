@@ -1,9 +1,11 @@
 @page "/nuevoProyecto"
 @page "/nuevoProyecto/{CodigoProyecto}"
+
 @using NeuromktApi.Models
 @using NeuromktApi.Services
 @using Npgsql
 @using System.Linq
+@using Microsoft.AspNetCore.Components
 
 @inject UserSession UserSession
 @inject IEProyectoFragancia EProyectoFragancia
@@ -11,8 +13,8 @@
 @inject IEProyecto EProyecto
 @inject IEColor EColor
 @inject IEPalabra EPalabra
-@inject IEFragancia EFragancia    
-@inject IEParticipante EParticipante 
+@inject IEFragancia EFragancia
+@inject IEParticipante EParticipante
 @inject IEProyectoPalabra ProyectoPalabraService
 @inject IEProyectoColor ProyectoColorService
 @inject IEResultado EResultado
@@ -21,7 +23,6 @@
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -34,16 +35,14 @@
 
         @if (!string.IsNullOrEmpty(mensajeOk))
         {
-            <RadzenAlert Severity="AlertSeverity.Success"
-                         Style="margin-bottom:0.75rem;">
+            <RadzenAlert Severity="AlertSeverity.Success" Style="margin-bottom:0.75rem;">
                 @mensajeOk
             </RadzenAlert>
         }
 
         @if (!string.IsNullOrEmpty(mensajeError))
         {
-            <RadzenAlert Severity="AlertSeverity.Error"
-                         Style="margin-bottom:0.75rem;">
+            <RadzenAlert Severity="AlertSeverity.Error" Style="margin-bottom:0.75rem;">
                 @mensajeError
             </RadzenAlert>
         }
@@ -59,11 +58,9 @@
                 }
             </div>
 
-
             <div class="nf-form-field">
                 <label class="nf-label">Fabricante / marca:</label>
-                <RadzenTextBox @bind-Value="proyecto.Proveedor"
-                               Style="width:100%;" />
+                <RadzenTextBox @bind-Value="proyecto.Proveedor" Style="width:100%;" />
                 @if (!string.IsNullOrEmpty(errorProveedor))
                 {
                     <div class="nf-input-error">@errorProveedor</div>
@@ -72,14 +69,11 @@
 
             <div class="nf-form-field">
                 <label class="nf-label">Descripción breve:</label>
-                <RadzenTextArea @bind-Value="proyecto.Descripcion"
-                                Rows="3"
-                                Style="width:100%;" />
+                <RadzenTextArea @bind-Value="proyecto.Descripcion" Rows="3" Style="width:100%;" />
             </div>
 
             <hr />
 
-            <!-- Palabras -->
             <div class="nf-form-field">
                 <label class="nf-label">Palabras:</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -102,7 +96,6 @@
                 }
             </div>
 
-            <!-- Colores -->
             <div class="nf-form-field">
                 <label class="nf-label">Colores:</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -113,15 +106,12 @@
                                     Placeholder="Selecciona los colores a usar"
                                     TextProperty="Hex"
                                     ValueProperty="Hex">
-
-                        <!-- Cada opción en la lista -->
                         <Template Context="c">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <div style="width:18px; height:18px; border-radius:4px; background-color:@c.Hex;"></div>
                                 @c.Hex
                             </div>
                         </Template>
-
                     </RadzenDropDown>
 
                     <RadzenButton Icon="add_circle"
@@ -133,16 +123,14 @@
                 {
                     <div class="nf-input-error">@errorColores</div>
                 }
-
             </div>
 
-            <!-- Fragancias -->
             <div class="nf-form-field">
                 <label class="nf-label">Fragancia(s):</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <RadzenDropDown Data="@fragancias"
                                     TextProperty="Nombre"
-                                    ValueProperty="Codigo"    
+                                    ValueProperty="Codigo"
                                     @bind-Value="seleccionFragancias"
                                     Multiple="true"
                                     Style="flex:1;"
@@ -161,38 +149,18 @@
 
             <hr />
 
-            <!-- Participantes -->
             <div class="nf-form-field">
                 <label class="nf-label">Participantes:</label>
                 <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <RadzenDropDown Data="@participantes"
-                                TextProperty="Email"
-                                ValueProperty="Email"
-                                Multiple="true"
-                                @bind-Value="seleccionParticipantes"
-                                Style="width:100%;"
-                                Placeholder="Selecciona los participantes que harán la prueba" />
 
                     <RadzenButton Icon="add_circle"
-                                  Text="Añadir"
+                                  Text="Crear Participante"
                                   ButtonStyle="ButtonStyle.Secondary"
                                   Click="@AbrirNuevoParticipanteDesdeProyecto" />
                 </div>
-                @if (!string.IsNullOrEmpty(errorParticipantes))
-                {
-                    <div class="nf-input-error">@errorParticipantes</div>
-                }
-            </div>
-
-            <div class="nf-form-field">
-                <label class="nf-label">
-                    Número de participantes del proyecto:
-                    @((seleccionParticipantes?.Count ?? 0)) 
-                </label>
             </div>
 
             <div class="nf-form-actions" style="margin-top:1.5rem; display:flex; flex-wrap:wrap; gap:0.75rem;">
-
                 <RadzenButton Text="Guardar"
                               Icon="save"
                               ButtonStyle="ButtonStyle.Secondary"
@@ -210,26 +178,22 @@
 
 </RadzenCard>
 
-<!-- POPUP NUEVA FRAGANCIA (reutilizable) -->
 <NuevaFragancia Visible="@dialogoFraganciaVisible"
                 VisibleChanged="@(v => dialogoFraganciaVisible = v)"
                 EsEdicion="false"
                 OnGuardado="@OnFraganciaCreada" />
 
-<!-- POPUP NUEVO PARTICIPANTE (reutilizable) -->
 <NuevoParticipante Visible="@dialogoParticipanteVisible"
                    VisibleChanged="@(v => dialogoParticipanteVisible = v)"
                    EsEdicion="false"
                    OnGuardado="@OnParticipanteCreado" />
 
-<!-- POPUP NUEVO COLOR (ColorForm reutilizable) -->
 <ColorForm Visible="@dialogColorVisible"
            VisibleChanged="@(v => dialogColorVisible = v)"
            EsEdicion="false"
            ColorActual="null"
            OnGuardado="@OnColorCreado" />
 
-<!-- POPUP NUEVA PALABRA (PalabraForm reutilizable) -->
 <PalabraForm Visible="@dialogPalabraVisible"
              VisibleChanged="@(v => dialogPalabraVisible = v)"
              EsEdicion="false"
@@ -238,47 +202,49 @@
 
 @code {
     private ProyectoModel proyecto = new ProyectoModel();
+
     [Parameter] public string? CodigoProyecto { get; set; }
     private bool EsEdicion => !string.IsNullOrWhiteSpace(CodigoProyecto);
 
     private List<PalabraModel> palabras = new();
     private List<ColorModel> colores = new();
     private List<FraganciaModel> fragancias = new();
-    private List<ParticipanteModel> participantes = new();
+    private List<ParticipanteModel> participantes = new(); 
 
     private IList<string> seleccionPalabras = new List<string>();
     private IList<string> seleccionColores = new List<string>();
     private IList<string> seleccionFragancias = new List<string>();
-    private IList<string> seleccionParticipantes = new List<string>(); 
+
+    private int? numParticipantesProyecto = 0;
 
     private bool busy = false;
     private string? mensajeOk;
     private string? mensajeError;
 
-    // popups
     private bool dialogoFraganciaVisible = false;
     private bool dialogoParticipanteVisible = false;
 
-    // popups de color / palabra
     private bool dialogColorVisible = false;
     private bool dialogPalabraVisible = false;
 
-    // Errores por campo
     private string? errorNombre;
     private string? errorProveedor;
     private string? errorDescripcion;
     private string? errorPalabras;
     private string? errorColores;
     private string? errorFragancias;
-    private string? errorParticipantes;
-
 
     protected override async Task OnInitializedAsync()
     {
         await CargarCombosAsync();
+
         if (EsEdicion)
         {
             await CargarProyectoExistenteAsync();
+        }
+        else
+        {
+            numParticipantesProyecto = 0;
         }
     }
 
@@ -286,33 +252,19 @@
     {
         try
         {
-            // 1) Datos básicos del proyecto
             proyecto = await EProyecto.ObtenerProyectoAsync(CodigoProyecto!);
 
-            // 2) Palabras del proyecto
             var palabrasProyecto = await ProyectoPalabraService.ListarPalabrasPorProyectoAsync(CodigoProyecto!);
-            seleccionPalabras = palabrasProyecto
-                .Select(p => p.Palabra)
-                .ToList();
+            seleccionPalabras = palabrasProyecto.Select(p => p.Palabra).ToList();
 
-            // 3) Colores del proyecto
             var coloresProyecto = await ProyectoColorService.ListarColoresPorProyectoAsync(CodigoProyecto!);
-            seleccionColores = coloresProyecto
-                .Select(c => c.ColorHex)
-                .ToList();
+            seleccionColores = coloresProyecto.Select(c => c.ColorHex).ToList();
 
-            // 4) Fragancias del proyecto
             var fraganciasProyecto = await EProyectoFragancia.ListarFraganciasPorProyectoAsync(CodigoProyecto!);
-            seleccionFragancias = fraganciasProyecto
-                .Select(f => f.FraganciaCodigo)
-                .ToList();
+            seleccionFragancias = fraganciasProyecto.Select(f => f.FraganciaCodigo).ToList();
 
-            // 5) Participantes del proyecto (pruebas)
             var pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(CodigoProyecto!);
-            seleccionParticipantes = pruebasProyecto
-                .Select(pr => pr.ParticipanteEmail)
-                .ToList();
-
+            numParticipantesProyecto = pruebasProyecto?.Count ?? 0;
         }
         catch (Exception ex)
         {
@@ -325,9 +277,10 @@
         try
         {
             var emailActual = UserSession.Email;
-            palabras      = await EPalabra.ListarPalabrasAsync();
-            colores       = await EColor.ListarColoresAsync();
-            fragancias    = await EFragancia.ListarFraganciasAsync();
+            palabras = await EPalabra.ListarPalabrasAsync();
+            colores = await EColor.ListarColoresAsync();
+            fragancias = await EFragancia.ListarFraganciasPorCreadorAsync(emailActual);
+
             participantes = await EParticipante.ListarParticipantesPorCreadorAsync(UserSession.Email!);
         }
         catch (Exception ex)
@@ -336,38 +289,18 @@
         }
     }
 
-    // === Abrir popups desde esta vista ===
-    private void AbrirNuevaFraganciaDesdeProyecto()
-    {
-        dialogoFraganciaVisible = true;
-    }
+    private void AbrirNuevaFraganciaDesdeProyecto() => dialogoFraganciaVisible = true;
+    private void AbrirNuevoParticipanteDesdeProyecto() => dialogoParticipanteVisible = true;
+    private void AbrirNuevoColorDesdeProyecto() => dialogColorVisible = true;
+    private void AbrirNuevaPalabraDesdeProyecto() => dialogPalabraVisible = true;
 
-    private void AbrirNuevoParticipanteDesdeProyecto()
-    {
-        dialogoParticipanteVisible = true;
-    }
-
-    private void AbrirNuevoColorDesdeProyecto()
-    {
-        dialogColorVisible = true;
-    }
-
-    private void AbrirNuevaPalabraDesdeProyecto()
-    {
-        dialogPalabraVisible = true;
-    }
-
-    // === Callbacks desde los popups ===
     private async Task OnFraganciaCreada(string codigo)
     {
         await CargarCombosAsync();
 
         var nueva = fragancias.FirstOrDefault(f => f.Codigo == codigo);
-        if (nueva != null)
-        {
-            if (!seleccionFragancias.Contains(codigo))
-                seleccionFragancias.Add(codigo);
-        }
+        if (nueva != null && !seleccionFragancias.Contains(codigo))
+            seleccionFragancias.Add(codigo);
 
         mensajeOk = $"Fragancia \"{nueva?.Nombre ?? codigo}\" creada correctamente.";
     }
@@ -376,13 +309,11 @@
     {
         await CargarCombosAsync();
 
-        email = email.Trim().ToLower();
-
-        if (!seleccionParticipantes.Contains(email))
-            seleccionParticipantes.Add(email);
-
-        var p = participantes.FirstOrDefault(x => x.Email.ToLower() == email);
-        mensajeOk = $"Participante \"{p?.Email ?? email}\" creado correctamente.";
+        email = (email ?? "").Trim().ToLower();
+        if (!string.IsNullOrWhiteSpace(email))
+            mensajeOk = $"Participante \"{email}\" creado correctamente.";
+        else
+            mensajeOk = "Participante creado correctamente.";
     }
 
     private async Task OnColorCreado(string hex)
@@ -416,21 +347,18 @@
 
         var valido = true;
 
-        // Nombre obligatorio
         if (string.IsNullOrWhiteSpace(proyecto.Nombre))
         {
             errorNombre = "El nombre del proyecto es obligatorio.";
             valido = false;
         }
 
-        // Proveedor obligatorio
         if (string.IsNullOrWhiteSpace(proyecto.Proveedor))
         {
             errorProveedor = "El fabricante/marca es obligatorio.";
             valido = false;
         }
 
-        // (Opcional) Obligar a seleccionar al menos 1
         if (seleccionPalabras == null || seleccionPalabras.Count == 0)
         {
             errorPalabras = "Selecciona al menos una palabra.";
@@ -449,12 +377,6 @@
             valido = false;
         }
 
-        if (seleccionParticipantes == null || seleccionParticipantes.Count == 0)
-        {
-            errorParticipantes = "Selecciona al menos un participante.";
-            valido = false;
-        }
-
         if (!valido)
         {
             mensajeError = "Revisa los campos marcados en rojo.";
@@ -462,6 +384,7 @@
         }
 
         busy = true;
+
         try
         {
             var emailActual = UserSession.Email;
@@ -475,13 +398,12 @@
 
             string codigoProyecto;
 
-            // =========================
-            // 1) CREAR / ACTUALIZAR
-            // =========================
             if (!EsEdicion)
             {
                 codigoProyecto = await EProyecto.CrearProyectoAsync(proyecto);
                 proyecto.Codigo = codigoProyecto;
+
+                numParticipantesProyecto = 0;
             }
             else
             {
@@ -490,94 +412,23 @@
 
                 await EProyecto.ActualizarProyectoAsync(proyecto);
 
-                // En edición: relaciones sí las reseteamos (no afectan resultados)
                 await ProyectoPalabraService.EliminarPorProyectoAsync(codigoProyecto);
                 await ProyectoColorService.EliminarPorProyectoAsync(codigoProyecto);
                 await EProyectoFragancia.EliminarPorProyectoAsync(codigoProyecto);
 
+                var pruebasProyecto = await EPrueba.ListarPruebasPorProyectoAsync(codigoProyecto);
+                numParticipantesProyecto = pruebasProyecto?.Count ?? 0;
             }
 
-            // =========================
-            // 2) PALABRAS
-            // =========================
-            if (seleccionPalabras?.Count > 0)
-            {
-                foreach (var palabra in seleccionPalabras)
-                {
-                    await ProyectoPalabraService.CrearProyectoPalabraAsync(codigoProyecto, palabra);
-                }
-            }
+            foreach (var palabra in seleccionPalabras)
+                await ProyectoPalabraService.CrearProyectoPalabraAsync(codigoProyecto, palabra);
 
-            // =========================
-            // 3) COLORES
-            // =========================
-            if (seleccionColores?.Count > 0)
-            {
-                foreach (var hex in seleccionColores)
-                {
-                    await ProyectoColorService.CrearProyectoColorAsync(codigoProyecto, hex);
-                }
-            }
+            foreach (var hex in seleccionColores)
+                await ProyectoColorService.CrearProyectoColorAsync(codigoProyecto, hex);
 
-            // =========================
-            // 4) FRAGANCIAS
-            // =========================
-            if (seleccionFragancias?.Count > 0)
-            {
-                foreach (var codFragancia in seleccionFragancias)
-                {
-                    await EProyectoFragancia.CrearProyectoFraganciaAsync(codigoProyecto, codFragancia);
-                }
-            }
+            foreach (var codFragancia in seleccionFragancias)
+                await EProyectoFragancia.CrearProyectoFraganciaAsync(codigoProyecto, codFragancia);
 
-            // =========================
-            // 5) PARTICIPANTES → PRUEBAS
-            // =========================
-            var pruebasActuales = await EPrueba.ListarPruebasPorProyectoAsync(codigoProyecto);
-
-            var emailsActuales = pruebasActuales
-                .Select(x => x.ParticipanteEmail.Trim().ToLower())
-                .ToHashSet();
-
-            var emailsSeleccionados = (seleccionParticipantes ?? new List<string>())
-                .Select(x => x.Trim().ToLower())
-                .ToHashSet();
-
-            // AÑADIR NUEVOS
-            var nuevos = emailsSeleccionados.Except(emailsActuales);
-            foreach (var emailNuevo in nuevos)
-            {
-                await EPrueba.CrearPruebaAsync(codigoProyecto, emailNuevo);
-            }
-
-            // QUITAR SOLO SI NO TIENE RESULTADOS
-            if (EsEdicion)
-            {
-                var quitados = emailsActuales.Except(emailsSeleccionados);
-
-                foreach (var emailQuitado in quitados)
-                {
-                    var prueba = pruebasActuales.FirstOrDefault(x =>
-                        x.ParticipanteEmail.Trim().ToLower() == emailQuitado);
-
-                    if (prueba == null) continue;
-
-                    var tieneResultados = await EResultado.ExistenResultadosParaPruebaAsync(prueba.Codigo);
-
-                    if (tieneResultados)
-                    {
-                        // No borramos: conserva resultados
-                        mensajeError = $"No puedes quitar a {emailQuitado} porque ya tiene resultados registrados.";
-                        continue;
-                    }
-
-                    await EPrueba.EliminarPruebasPorProyectoAsync(prueba.Codigo);
-                }
-            }
-
-            // =========================
-            // FIN
-            // =========================
             mensajeOk = EsEdicion
                 ? "Proyecto actualizado correctamente."
                 : "Proyecto guardado correctamente.";
@@ -609,10 +460,7 @@
         errorPalabras = null;
         errorColores = null;
         errorFragancias = null;
-        errorParticipantes = null;
     }
-
-
 
     private void Cancelar()
     {

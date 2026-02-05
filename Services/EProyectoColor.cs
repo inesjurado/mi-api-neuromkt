@@ -35,7 +35,7 @@ namespace NeuromktApi.Services
 
             var pProyecto = new NpgsqlParameter("@p_proyecto_codigo", proyectoCodigo.Trim());
             var pColor    = new NpgsqlParameter("@p_color_hex", colorHex.Trim());
-            var pCodigo   = new NpgsqlParameter("@p_codigo", DBNull.Value); // que genere PC<n>
+            var pCodigo   = new NpgsqlParameter("@p_codigo", DBNull.Value); 
 
             try
             {

@@ -114,11 +114,7 @@ namespace NeuromktApi.Services
                 throw;
             }
         }
-        /// <summary>
-        /// Actualiza un color usando neuromkt.u_color(p_hex_original, p_hex_nuevo, p_nombre)
-        /// - hexOriginal: valor actual que hay en la columna hex (ej: 'rgb(124, 55, 55)')
-        /// - colorNuevo: Hex y/o Nombre nuevos. Si Nombre es null/empty, se deja el que había.
-        /// </summary>
+       
         public async Task ActualizarColorAsync(string hexOriginal, ColorModel colorNuevo)
         {
             const string sql = @"

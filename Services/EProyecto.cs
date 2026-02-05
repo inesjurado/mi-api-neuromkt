@@ -174,7 +174,6 @@ namespace NeuromktApi.Services
 
         public async Task EliminarProyectoAsync(string codigo)
         {
-            // Más adelante puedes cambiarlo a d_proyecto(codigo)
             var sql = "DELETE FROM neuromkt.proyectos WHERE codigo = @p_codigo;";
             var param = new NpgsqlParameter("@p_codigo", codigo);
 

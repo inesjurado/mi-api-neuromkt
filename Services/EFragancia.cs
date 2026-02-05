@@ -10,10 +10,11 @@ namespace NeuromktApi.Services
 {
     public interface IEFragancia
     {
-        Task<List<FraganciaModel>> ListarFraganciasAsync();
+        Task<List<FraganciaModel>> ListarFraganciasPorCreadorAsync(string creadoPor);
         Task<string> CrearFraganciaAsync(FraganciaModel fragancia);
         Task ActualizarFraganciaAsync(string codigo, FraganciaModel fragancia);
         Task EliminarFraganciaAsync(string codigo);
+        Task<FraganciaModel?> ObtenerFraganciaAsync(string codigo);
     }
 
     public class EFragancia : IEFragancia
@@ -79,8 +80,11 @@ namespace NeuromktApi.Services
         // ======================
         // LISTAR FRAGANCIAS
         // ======================
-        public async Task<List<FraganciaModel>> ListarFraganciasAsync()
+        public async Task<List<FraganciaModel>> ListarFraganciasPorCreadorAsync(string creadoPor)
         {
+            if (string.IsNullOrWhiteSpace(creadoPor))
+                throw new Exception("creadoPor es obligatorio para listar fragancias.");
+
             var lista = new List<FraganciaModel>();
 
             var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
@@ -90,21 +94,28 @@ namespace NeuromktApi.Services
 
             try
             {
-                await using var cmd = new NpgsqlCommand(
-                    "SELECT * FROM neuromkt.f_fragancias();",
-                    conn
-                );
+                const string sql = "SELECT codigo, nombre, proveedor, descripcion, creado_por FROM neuromkt.f_fragancias_por_creador(:p_creado_por);";
+
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("p_creado_por", creadoPor.Trim().ToLower());
 
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
+                    var codigo = reader.GetString(0);
+                    var nombre = reader.GetString(1);
+
+                    var proveedor = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+                    var descripcion = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                    var creado = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+
                     lista.Add(new FraganciaModel
                     {
-                        Codigo      = reader.GetString(0),
-                        Nombre      = reader.GetString(1),
-                        Proveedor   = reader.IsDBNull(2) ? null : reader.GetString(2),
-                        Descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
-                        CreadoPor   = reader.IsDBNull(4) ? null : reader.GetString(4)
+                        Codigo = codigo,
+                        Nombre = nombre,
+                        Proveedor = proveedor,
+                        Descripcion = descripcion,
+                        CreadoPor = creado
                     });
                 }
             }
@@ -122,7 +133,6 @@ namespace NeuromktApi.Services
             return lista;
         }
 
-
         // ======================
         // ACTUALIZAR FRAGANCIA
         // ======================
@@ -137,10 +147,6 @@ namespace NeuromktApi.Services
                 );";
 
             var pCodigo = new NpgsqlParameter("@p_codigo", codigo?.Trim() ?? string.Empty);
-
-            // Siguiendo tu función PL/pgSQL:
-            // - si un parámetro es NULL -> NO se toca ese campo
-            // - si es '' en proveedor/descripcion -> se convertirá en NULL
             var pNombre = new NpgsqlParameter("@p_nombre",
                 (object?)fragancia.Nombre ?? DBNull.Value);
 
@@ -182,5 +188,42 @@ namespace NeuromktApi.Services
                 throw;
             }
         }
+
+        public async Task<FraganciaModel?> ObtenerFraganciaAsync(string codigo)
+        {
+            const string sql = @"
+                SELECT codigo, nombre, proveedor, descripcion, creado_por
+                FROM neuromkt.fragancias
+                WHERE codigo = @p_codigo
+                LIMIT 1;
+            ";
+
+            var conn = (NpgsqlConnection)_db.Database.GetDbConnection();
+            var wasOpen = conn.State == ConnectionState.Open;
+            if (!wasOpen) await conn.OpenAsync();
+
+            try
+            {
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p_codigo", codigo.Trim());
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if (!await reader.ReadAsync()) return null;
+
+                return new FraganciaModel
+                {
+                    Codigo = reader["codigo"] as string ?? "",
+                    Nombre = reader["nombre"] as string ?? "",
+                    Proveedor = reader["proveedor"] as string,
+                    Descripcion = reader["descripcion"] as string,
+                    CreadoPor = reader["creado_por"] as string
+                };
+            }
+            finally
+            {
+                if (!wasOpen) await conn.CloseAsync();
+            }
+        }
+
     }
 }

@@ -10,7 +10,6 @@
 
 <RadzenCard Class="nf-page" Style="border:none; box-shadow:none;">
 
-    <!-- Cabecera -->
     <div class="nf-header">
         <RadzenCard Class="nf-title-card">
             <div class="nf-title-text">
@@ -19,7 +18,6 @@
         </RadzenCard>
     </div>
 
-    <!-- Toolbar -->
     <div class="nf-toolbar" style="display:flex; gap:1rem;">
         <RadzenButton Icon="add_circle"
                   Text="Nuevo participante"
@@ -33,7 +31,6 @@
               Click="@DescargarParticipantes" />
     </div>
 
-    <!-- Mensajes -->
     @if (!string.IsNullOrEmpty(mensajeOk))
     {
         <RadzenAlert Severity="AlertSeverity.Success"
@@ -50,7 +47,6 @@
         </RadzenAlert>
     }
 
-    <!-- Tabla -->
     <RadzenCard Class="nf-table-card">
         <RadzenDataGrid TItem="ParticipanteModel"
                         Data="@participantes"
@@ -131,16 +127,14 @@
     private string? mensajeError;
     private bool busy = false;
 
-    // Lista fija de géneros (puedes cambiarla)
+    // Lista fija de géneros
     private List<string> generos = new() { "M", "F", "Otro" };
 
-    // --- Nuevo ---
     private ParticipanteModel nuevoParticipante = new ParticipanteModel();
     private bool creandoBusy = false;
     private string? mensajeFormError;
     private string? errorEmailNuevo;
 
-    // --- Editar ---
     private ParticipanteModel participanteEditando = new ParticipanteModel();
     private string? emailOriginal;
     private bool editandoBusy = false;
@@ -175,7 +169,6 @@
         }
     }
 
-    // ====== BORRAR ======
     private async Task OnBorrarParticipante(ParticipanteModel p)
     {
         if (busy)

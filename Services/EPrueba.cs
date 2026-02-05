@@ -11,7 +11,7 @@ namespace NeuromktApi.Services
     public interface IEPrueba
     {
         // AHORA RECIBE EL CÓDIGO DEL PARTICIPANTE (U01, U02, ...)
-        Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail);
+        Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail, string fraganciaCodigo);
         Task<string> ActualizarFechaPruebaAsync(string pruebaCodigo, DateTime? fecha = null);
         Task<List<PruebaModel>> ListarPruebasPorProyectoAsync(string proyectoCodigo);
         Task EliminarPruebasPorProyectoAsync(string proyectoCodigo);
@@ -26,13 +26,14 @@ namespace NeuromktApi.Services
             _db = db;
         }
 
-        public async Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail)
+        public async Task<string> CrearPruebaAsync(string proyectoCodigo, string participanteEmail, string fraganciaCodigo)
         {
             const string sql = @"
                 SELECT neuromkt.i_prueba(
-                    p_codigo               => :p_codigo,
-                    p_proyecto_codigo      => :p_proyecto_codigo,
-                    p_participante_email   => :p_participante_email
+                    p_codigo             => :p_codigo,
+                    p_proyecto_codigo    => :p_proyecto_codigo,
+                    p_participante_email => :p_participante_email,
+                    p_fragancia_codigo   => :p_fragancia_codigo
                 );
             ";
 
@@ -45,13 +46,19 @@ namespace NeuromktApi.Services
             {
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value); // PRB<n>
+                cmd.Parameters.AddWithValue("p_codigo", DBNull.Value); 
+
+                if (string.IsNullOrWhiteSpace(proyectoCodigo))
+                    throw new Exception("El código del proyecto viene vacío al servicio.");
                 cmd.Parameters.AddWithValue("p_proyecto_codigo", proyectoCodigo.Trim());
 
                 if (string.IsNullOrWhiteSpace(participanteEmail))
                     throw new Exception("El email del participante viene vacío al servicio.");
-
                 cmd.Parameters.AddWithValue("p_participante_email", participanteEmail.Trim().ToLower());
+
+                if (string.IsNullOrWhiteSpace(fraganciaCodigo))
+                    throw new Exception("La fragancia viene vacía al servicio.");
+                cmd.Parameters.AddWithValue("p_fragancia_codigo", fraganciaCodigo.Trim());
 
                 var result = await cmd.ExecuteScalarAsync();
                 return Convert.ToString(result) ?? string.Empty;
@@ -67,6 +74,7 @@ namespace NeuromktApi.Services
                     await conn.CloseAsync();
             }
         }
+
 
 
         public async Task<string> ActualizarFechaPruebaAsync(string pruebaCodigo, DateTime? fecha = null)
@@ -89,7 +97,6 @@ namespace NeuromktApi.Services
 
                 cmd.Parameters.AddWithValue("p_codigo", pruebaCodigo.Trim());
 
-                // Si no se pasa fecha, mandamos NULL y la función pone NOW()
                 if (fecha.HasValue)
                     cmd.Parameters.AddWithValue("p_fecha_prueba", fecha.Value);
                 else

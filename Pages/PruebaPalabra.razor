@@ -22,14 +22,10 @@
 
         @if (!resumenVisible)
         {
-            <!-- PASO 2: ELECCIÓN DE PALABRA -->
             <RadzenCard Class="nf-table-card nf-test-main">
                 <div class="nf-test-main-inner">
                     <h2>¿Con qué palabra asocias la fragancia?</h2>
 
-                    <!-- ✅ Quitado: no mostramos participante -->
-
-                    <!-- GRID DE PALABRAS -->
                     <div class="test-word-grid">
                         @foreach (var item in palabrasProyecto)
                         {
@@ -100,7 +96,6 @@
     [Parameter] public string ProyectoCodigo { get; set; } = default!;
     [Parameter] public string ParticipanteEmail { get; set; } = default!;
 
-    // vienen por query ?pruebaCodigo=&colorHex=
     [Parameter, SupplyParameterFromQuery(Name = "pruebaCodigo")]
     public string? PruebaCodigo { get; set; }
 
@@ -110,7 +105,6 @@
     private List<ProyectoPalabraModel> palabrasProyecto = new();
     private string? palabraSeleccionada;
 
-    // estado resumen
     private bool resumenVisible = false;
     private string? resumenColorHex;
     private string? resumenPalabra;
