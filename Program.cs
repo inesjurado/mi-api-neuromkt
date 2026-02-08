@@ -49,11 +49,11 @@ app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
+app.MapGet("/health", () => Results.Ok("OK"));
 app.MapGet("/health/db", async (AppDbContext db) =>
     await db.Database.CanConnectAsync()
         ? Results.Ok("DB OK")
         : Results.Problem("DB FAIL"));
-app.MapGet("/health", () => Results.Ok("OK"));
 
 app.Run();
 
