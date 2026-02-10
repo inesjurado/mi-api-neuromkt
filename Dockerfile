@@ -2,11 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY *.csproj ./
+COPY . .
 RUN dotnet restore
-
-COPY . ./
-RUN dotnet publish NeuromktApi.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish -c Release -o /app/publish
 
 # ---- Runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
