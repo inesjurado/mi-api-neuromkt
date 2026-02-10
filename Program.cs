@@ -13,6 +13,7 @@ Console.WriteLine(">>> DefaultConnection = " + cs);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
+builder.Services.AddHostedService<SelfPingService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddDbContext<AppDbContext>(o =>
