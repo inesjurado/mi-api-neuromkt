@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Ping Render health endpoint
         run: |
-          curl -sS -m 15 -L "https://mi-api-neuromkt.onrender.com/health" || true
+          curl -sS -m 15 -L "https://mi-api-neuromkt.onrender.com" || true
 
