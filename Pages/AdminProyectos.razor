@@ -97,23 +97,27 @@
                                     Filterable="false">
                     <Template Context="item">
                         <RadzenButton Icon="analytics"
+                                    Title="Ver resultados"
                                     Size="ButtonSize.Small"
                                     ButtonStyle="ButtonStyle.Light"
                                     Style="margin-right:0.5rem;"
                                     Click="@(() => AbrirDialogoResultados(item))" />
+
                         <RadzenButton Icon="file_download"
+                                    Title="Descargar proyecto"
                                     Size="ButtonSize.Small"
                                     ButtonStyle="ButtonStyle.Light"
                                     Style="margin-right:0.5rem;"
                                     Click="@(() => DescargarProyecto(item))" />
 
-
                         <RadzenButton Icon="delete"
+                                    Title="Eliminar proyecto"
                                     Size="ButtonSize.Small"
                                     ButtonStyle="ButtonStyle.Light"
                                     Click="@(() => OnBorrarProyecto(item))" />
                     </Template>
                 </RadzenDataGridColumn>
+
             </Columns>
         </RadzenDataGrid>
     </RadzenCard>

@@ -69,31 +69,34 @@
                                       Title="Rol" />
 
                 <RadzenDataGridColumn TItem="UsuarioModel"
-                                      Title="Acciones"
-                                      Width="120px"
-                                      Filterable="false">
+                                    Title="Acciones"
+                                    Width="120px"
+                                    Filterable="false">
                     <Template Context="item">
 
                         <RadzenButton Icon="edit"
-                                      Size="ButtonSize.Small"
-                                      ButtonStyle="ButtonStyle.Light"
-                                      Click="@(() => EditarUsuario(item))"
-                                      Style="margin-right:0.5rem;" />
+                                    Title="Editar usuario"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Click="@(() => EditarUsuario(item))"
+                                    Style="margin-right:0.5rem;" />
                         
                         <RadzenButton Icon="file_download"
-                                        Size="ButtonSize.Small"
-                                        ButtonStyle="ButtonStyle.Light"
-                                        Style="margin-right:0.5rem;"
-                                        Click="@(() => DescargarPerfil(item))" />
-
+                                    Title="Descargar perfil"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => DescargarPerfil(item))" />
 
                         <RadzenButton Icon="delete"
-                                      Size="ButtonSize.Small"
-                                      ButtonStyle="ButtonStyle.Light"
-                                      Click="@(() => BorrarUsuario(item))" />
+                                    Title="Eliminar usuario"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Click="@(() => BorrarUsuario(item))" />
 
                     </Template>
                 </RadzenDataGridColumn>
+
 
             </Columns>
 

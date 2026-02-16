@@ -84,28 +84,32 @@
                                       FilterOperator="FilterOperator.Contains" />
 
                 <RadzenDataGridColumn TItem="ParticipanteModel"
-                                      Title="Acciones"
-                                      Width="120px"
-                                      Filterable="false">
+                                    Title="Acciones"
+                                    Width="120px"
+                                    Filterable="false">
                     <Template Context="p">
                         <RadzenButton Icon="edit"
-                            Size="ButtonSize.Small"
-                            ButtonStyle="ButtonStyle.Light"
-                            Style="margin-right:0.5rem;"
-                            Click="@(() => AbrirEditarParticipante(p))" />
+                                    Title="Editar participante"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Style="margin-right:0.5rem;"
+                                    Click="@(() => AbrirEditarParticipante(p))" />
 
                         <RadzenButton Icon="file_download"
+                                    Title="Descargar participante"
                                     Size="ButtonSize.Small"
                                     ButtonStyle="ButtonStyle.Light"
                                     Style="margin-right:0.5rem;"
                                     Click="@(() => DescargarParticipante(p))" />
 
                         <RadzenButton Icon="delete"
-                                      Size="ButtonSize.Small"
-                                      ButtonStyle="ButtonStyle.Light"
-                                      Click="@(() => OnBorrarParticipante(p))" />
+                                    Title="Eliminar participante"
+                                    Size="ButtonSize.Small"
+                                    ButtonStyle="ButtonStyle.Light"
+                                    Click="@(() => OnBorrarParticipante(p))" />
                     </Template>
                 </RadzenDataGridColumn>
+
             </Columns>
         </RadzenDataGrid>
     </RadzenCard>
