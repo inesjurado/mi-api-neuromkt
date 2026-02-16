@@ -109,30 +109,35 @@
                                       Filterable="false">
                     <Template Context="p">
                         <RadzenButton Icon="edit"
+                                      Title="Editar proyecto"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => VerProyecto(p))" />
 
                         <RadzenButton Icon="play_arrow"
+                                      Title="Empezar prueba"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => AbrirDialogoEmpezar(p))" />
 
                         <RadzenButton Icon="analytics"
+                                      Title="Ver resultados"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => AbrirDialogoResultados(p))" />
 
                         <RadzenButton Icon="file_download"
+                                      Title="Descargar proyecto"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
                                       Style="margin-right:0.5rem;"
                                       Click="@(() => DescargarProyecto(p))" />
 
                         <RadzenButton Icon="delete"
+                                      Title="Eliminar proyecto"
                                       Size="ButtonSize.Small"
                                       ButtonStyle="ButtonStyle.Light"
                                       Click="@(() => BorrarProyecto(p))" />
