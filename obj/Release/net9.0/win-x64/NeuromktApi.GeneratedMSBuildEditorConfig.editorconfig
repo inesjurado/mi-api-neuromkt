@@ -1,0 +1,125 @@
+is_global = true
+build_property.TargetFramework = net9.0
+build_property.TargetFramework = net9.0
+build_property.TargetPlatformMinVersion = 
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = NeuromktApi
+build_property.RootNamespace = NeuromktApi
+build_property.ProjectDir = /Users/inesjuradorichards/Documents/NeuromktApi/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = /Users/inesjuradorichards/Documents/NeuromktApi
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/App.razor]
+build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminConfiguracion.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Db25maWd1cmFjaW9uLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminProyectos.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Qcm95ZWN0b3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/AdminUsuario.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQWRtaW5Vc3VhcmlvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/ColorForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ29sb3JGb3JtLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/EstadisticasProyecto.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvRXN0YWRpc3RpY2FzUHJveWVjdG8ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestFragancias.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0RnJhZ2FuY2lhcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestParticipantes.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0UGFydGljaXBhbnRlcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/InvestProyectos.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSW52ZXN0UHJveWVjdG9zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevaFragancia.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldmFGcmFnYW5jaWEucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevoParticipante.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9QYXJ0aWNpcGFudGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/NuevoProyectoInvestigador.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTnVldm9Qcm95ZWN0b0ludmVzdGlnYWRvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PalabraForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUGFsYWJyYUZvcm0ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaColor.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhQ29sb3IucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaIntro.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhSW50cm8ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/PruebaPalabra.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUHJ1ZWJhUGFsYWJyYS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/ResultadosDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUmVzdWx0YWRvc0RpYWxvZy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/UsuarioForm.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVXN1YXJpb0Zvcm0ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Shared/BlankLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL0JsYW5rTGF5b3V0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Shared/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL01haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Shared/UserHeaderCard.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkL1VzZXJIZWFkZXJDYXJkLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/inesjuradorichards/Documents/NeuromktApi/Pages/_Host.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvX0hvc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 

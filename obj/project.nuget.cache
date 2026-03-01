@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "r782xmaG6II=",
+  "dgSpecHash": "OdsTvsOFFPE=",
   "success": true,
   "projectFilePath": "/Users/inesjuradorichards/Documents/NeuromktApi/NeuromktApi.csproj",
   "expectedPackageFiles": [
@@ -60,7 +60,10 @@
     "/Users/inesjuradorichards/.nuget/packages/system.reflection.metadata/7.0.0/system.reflection.metadata.7.0.0.nupkg.sha512",
     "/Users/inesjuradorichards/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "/Users/inesjuradorichards/.nuget/packages/system.text.json/9.0.10/system.text.json.9.0.10.nupkg.sha512",
-    "/Users/inesjuradorichards/.nuget/packages/system.threading.channels/7.0.0/system.threading.channels.7.0.0.nupkg.sha512"
+    "/Users/inesjuradorichards/.nuget/packages/system.threading.channels/7.0.0/system.threading.channels.7.0.0.nupkg.sha512",
+    "/Users/inesjuradorichards/.nuget/packages/microsoft.netcore.app.runtime.win-x64/9.0.10/microsoft.netcore.app.runtime.win-x64.9.0.10.nupkg.sha512",
+    "/Users/inesjuradorichards/.nuget/packages/microsoft.aspnetcore.app.runtime.win-x64/9.0.10/microsoft.aspnetcore.app.runtime.win-x64.9.0.10.nupkg.sha512",
+    "/Users/inesjuradorichards/.nuget/packages/microsoft.netcore.app.host.win-x64/9.0.10/microsoft.netcore.app.host.win-x64.9.0.10.nupkg.sha512"
   ],
   "logs": []
 }
